@@ -4,6 +4,7 @@ import com.codenumnum.agendabyweather.dao.domain.WeatherForecast;
 import com.codenumnum.agendabyweather.dao.domain.WeatherUrls;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -11,11 +12,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Component
 public class WeatherApiDao {
 
-    public static final String WEATHER_POINTS_URL = "https://api.weather.gov/points/{latitude},{longitude}";
     WebClient webClient;
+    String WEATHER_POINTS_URL;
 
-    public WeatherApiDao(WebClient.Builder webClientBuilder) {
+    public WeatherApiDao(WebClient.Builder webClientBuilder,
+                         @Value("${weather-api.points.url}") String weatherPointsUrl) {
         this.webClient = webClientBuilder.build();
+        WEATHER_POINTS_URL = weatherPointsUrl;
     }
 
     public WeatherForecast retrieveHourlyForecast(double latitude, double longitude) {
