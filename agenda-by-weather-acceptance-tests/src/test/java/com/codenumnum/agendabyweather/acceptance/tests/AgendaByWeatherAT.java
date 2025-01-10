@@ -50,7 +50,7 @@ public class AgendaByWeatherAT {
         String okPointsResponseAsString = getExpectedJsonResponseAsString("ok-points-response");
         String okHourlyForecastResponseAsString = getExpectedJsonResponseAsString("ok-hourly-forecast-response");
 
-        mockServer.when(request().withMethod("GET").withPath("/points/39.6677,-103.5934"))
+        mockServer.when(request().withMethod("GET").withPath("/points/39.6677%2C-103.5934"))
                 .respond(response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON).withBody(okPointsResponseAsString));
 
         mockServer.when(request().withMethod("GET").withPath("/gridpoints/BOU/111,55/forecast/hourly"))

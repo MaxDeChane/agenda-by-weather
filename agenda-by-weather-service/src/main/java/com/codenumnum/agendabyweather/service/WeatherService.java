@@ -16,6 +16,6 @@ public class WeatherService {
 
     public WeatherForecast retrieveUserMainAreaWeather() {
         // Just somewhere random for now
-        return weatherApiDao.retrieveHourlyForecast( 39.6677, -103.5934);
+        return weatherApiDao.retrieveHourlyForecast( );
     }
 }
