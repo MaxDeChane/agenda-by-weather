@@ -6,8 +6,10 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 @Transactional
@@ -16,14 +18,25 @@ public class AgendaService {
 
     AgendaRepository agendaRepository;
 
-    public Agenda retrieveAgendaCreatingIfNotExists(String latLon) {
-        var agendaOptional = agendaRepository.findById(latLon);
+    public Agenda retrieveDefaultAgendaCreatingIfNotPresent() {
+        var agendaOptional = agendaRepository.findByDefaultAgenda(true);
 
         if (agendaOptional.isPresent()) {
+            log.info("Found default agenda");
             return agendaOptional.get();
         }
 
-        Agenda agenda = new Agenda(latLon);
+        log.info("Default agenda not found so creating new one");
+        // Initial will have a value of empty so the front end knows to get
+        // the info from the user.
+        Agenda agenda = new Agenda("", true, null);
         return agendaRepository.save(agenda);
+    }
+
+    public Agenda updateDefaultAgendaLatLon(String latLon) {
+        Agenda defaultAgenda = retrieveDefaultAgendaCreatingIfNotPresent();
+        defaultAgenda.setLatLon(latLon);
+
+        return agendaRepository.save(defaultAgenda);
     }
 }

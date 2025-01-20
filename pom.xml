@@ -22,6 +22,7 @@
     <modules>
         <module>agenda-by-weather-acceptance-tests</module>
         <module>agenda-by-weather-presentation</module>
+        <module>agenda-by-weather-presentation-domain</module>
         <module>agenda-by-weather-service</module>
         <module>agenda-by-weather-dao</module>
     </modules>

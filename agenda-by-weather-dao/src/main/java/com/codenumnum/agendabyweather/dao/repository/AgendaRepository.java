@@ -9,5 +9,5 @@ import java.util.Optional;
 @Repository
 public interface AgendaRepository extends JpaRepository<Agenda, String> {
 
-    Optional<Agenda> findById(String id);
+    Optional<Agenda> findByDefaultAgenda(boolean defaultAgenda);
 }

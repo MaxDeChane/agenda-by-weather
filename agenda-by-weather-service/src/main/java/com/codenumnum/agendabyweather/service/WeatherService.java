@@ -14,8 +14,7 @@ public class WeatherService {
 
     WeatherApiDao weatherApiDao;
 
-    public WeatherForecast retrieveUserMainAreaWeather() {
-        // Just somewhere random for now
-        return weatherApiDao.retrieveHourlyForecast( );
+    public WeatherForecast retrieveWeather(String latLon) {
+        return weatherApiDao.retrieveHourlyForecast(latLon);
     }
 }

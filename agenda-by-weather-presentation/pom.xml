@@ -15,6 +15,11 @@
     <dependencies>
         <dependency>
             <groupId>com.codenumnum</groupId>
+            <artifactId>agenda-by-weather-presentation-domain</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.codenumnum</groupId>
             <artifactId>agenda-by-weather-service</artifactId>
             <version>${project.version}</version>
         </dependency>
