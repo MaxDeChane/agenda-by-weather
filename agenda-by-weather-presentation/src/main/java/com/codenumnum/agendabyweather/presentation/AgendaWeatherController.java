@@ -1,6 +1,7 @@
 package com.codenumnum.agendabyweather.presentation;
 
 import com.codenumnum.agendabyweather.dao.GeocodingApiDao;
+import com.codenumnum.agendabyweather.dao.domain.WeatherUrls;
 import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
 import com.codenumnum.agendabyweather.service.AgendaService;
 import com.codenumnum.agendabyweather.service.WeatherService;
@@ -34,7 +35,8 @@ public class AgendaWeatherController {
         }
 
         try {
-            defaultAgenda.setWeatherForecast(weatherService.retrieveWeather(defaultAgenda.getLatLon()));
+            defaultAgenda.setGeneralWeatherForecast(weatherService.retrieveWeatherForecast(defaultAgenda.getGeneralWeatherForecastUrl()));
+            defaultAgenda.setHourlyWeatherForecast(weatherService.retrieveWeatherForecast(defaultAgenda.getHourlyWeatherForecastUrl()));
         } catch (Exception e) {
             // Just catch but still return the agenda so the info there can be used.
             log.error("Error retrieving weather forecast. Just returning the agenda", e);
@@ -46,10 +48,12 @@ public class AgendaWeatherController {
     @PutMapping("/{address}")
     public Agenda updateLatLonOnDefaultAgenda(@PathVariable String address) {
         String latLon = geocodingApiDao.retrieveLatLonFromAddress(address);
-        Agenda agenda = agendaService.updateDefaultAgendaLatLon(latLon);
+        WeatherUrls weatherUrls = weatherService.retrieveWeatherUrls(latLon);
+        Agenda agenda = agendaService.updateAgendaWeatherBaseInfo(latLon, weatherUrls);
 
         try {
-            agenda.setWeatherForecast(weatherService.retrieveWeather(agenda.getLatLon()));
+            agenda.setGeneralWeatherForecast(weatherService.retrieveWeatherForecast(agenda.getGeneralWeatherForecastUrl()));
+            agenda.setHourlyWeatherForecast(weatherService.retrieveWeatherForecast(agenda.getHourlyWeatherForecastUrl()));
         } catch (Exception e) {
             // Just catch but still return the agenda so the info there can be used.
             log.error("Error retrieving weather forecast. Just returning the agenda", e);

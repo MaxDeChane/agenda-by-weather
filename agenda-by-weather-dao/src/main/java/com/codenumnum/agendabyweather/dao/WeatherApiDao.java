@@ -21,16 +21,17 @@ public class WeatherApiDao {
         this.weatherPointsUrl = weatherPointsUrl;
     }
 
-    public WeatherForecast retrieveHourlyForecast(String latLon) {
-        // TODO: move this into user info setup so it will only need to be done one time when that stuff gets setup
-         WeatherUrls weatherUrls = webClient.get()
+    public WeatherUrls retrieveWeatherUrls(String latLon) {
+        return webClient.get()
                 .uri(weatherPointsUrl, uriBuilder -> uriBuilder.build(latLon))
                 .retrieve()
                 .bodyToMono(WeatherUrls.class)
                 .block();
+    }
 
+    public WeatherForecast retrieveWeatherForecast(String weatherForecastUrl) {
          return webClient.get()
-                 .uri(weatherUrls.getForecastHourlyUrl())
+                 .uri(weatherForecastUrl)
                  .retrieve()
                  .bodyToMono(WeatherForecast.class)
                  .block();
