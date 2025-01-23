@@ -1,9 +1,8 @@
 package com.codenumnum.agendabyweather.dao.domain;
 
-import java.time.Instant;
 import java.util.List;
 
 
-public record WeatherForecastProperties(String units, Instant generatedAt, Instant updateTime,
+public record WeatherForecastProperties(String units, String generatedAt, String updateTime,
                                         List<WeatherForecastPeriod> periods) {
 }
