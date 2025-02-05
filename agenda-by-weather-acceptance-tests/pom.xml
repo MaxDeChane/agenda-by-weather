@@ -21,10 +21,6 @@
                     <groupId>org.xerial</groupId>
                     <artifactId>sqlite-jdbc</artifactId>
                 </exclusion>
-<!--                <exclusion>-->
-<!--                    <groupId>org.hibernate.orm</groupId>-->
-<!--                    <artifactId>hibernate-community-dialects</artifactId>-->
-<!--                </exclusion>-->
             </exclusions>
         </dependency>
         <dependency>
