@@ -19,12 +19,20 @@
 <!--        <java.version>21</java.version>-->
 <!--    </properties>-->
 
+    <profiles>
+        <profile>
+            <id>acceptance-tests</id>
+            <modules>
+                <module>agenda-by-weather-acceptance-tests</module>
+            </modules>
+        </profile>
+    </profiles>
+
     <modules>
-        <module>agenda-by-weather-acceptance-tests</module>
-        <module>agenda-by-weather-presentation</module>
-        <module>agenda-by-weather-presentation-domain</module>
-        <module>agenda-by-weather-service</module>
         <module>agenda-by-weather-dao</module>
+        <module>agenda-by-weather-service</module>
+        <module>agenda-by-weather-presentation-domain</module>
+        <module>agenda-by-weather-presentation</module>
     </modules>
 
     <dependencies>

@@ -15,22 +15,28 @@
             <groupId>com.codenumnum</groupId>
             <artifactId>agenda-by-weather-presentation</artifactId>
             <version>${project.version}</version>
-            <!-- Remove the sqlite for testing so a in memory db will be used -->
+            <!-- Remove the sqlite for testing so an in memory db will be used -->
             <exclusions>
                 <exclusion>
                     <groupId>org.xerial</groupId>
                     <artifactId>sqlite-jdbc</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.hibernate.orm</groupId>
-                    <artifactId>hibernate-community-dialects</artifactId>
-                </exclusion>
+<!--                <exclusion>-->
+<!--                    <groupId>org.hibernate.orm</groupId>-->
+<!--                    <artifactId>hibernate-community-dialects</artifactId>-->
+<!--                </exclusion>-->
             </exclusions>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ninja-squad</groupId>
+            <artifactId>DbSetup</artifactId>
+            <version>2.1.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

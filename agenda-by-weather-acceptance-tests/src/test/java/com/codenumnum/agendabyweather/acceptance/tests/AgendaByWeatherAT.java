@@ -1,41 +1,71 @@
 package com.codenumnum.agendabyweather.acceptance.tests;
 
 import com.codenumnum.agendabyweather.AgendaByWeatherApplication;
+import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
+import com.ninja_squad.dbsetup.DbSetup;
+import com.ninja_squad.dbsetup.destination.DataSourceDestination;
+import com.ninja_squad.dbsetup.operation.Operation;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ResourceUtils;
 
+import javax.sql.DataSource;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
+import static com.ninja_squad.dbsetup.Operations.*;
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 @SpringBootTest(classes = AgendaByWeatherApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AgendaByWeatherAT {
 
+    // Default testing agenda date which is an hour apart
+    private static final OffsetDateTime START_DATE_TIME = OffsetDateTime.of(LocalDateTime.of(2025, 1, 5, 12, 0), ZoneOffset.ofHours(6));
+    private static final OffsetDateTime END_DATE_TIME = OffsetDateTime.of(LocalDateTime.of(2025, 1, 5, 13, 0), ZoneOffset.ofHours(6));
+    private static final Operation DELETE_ALL = deleteAllFrom("AGENDA_AGENDA_ITEMS", "AGENDA", "AGENDA_ITEM");
     private static ClientAndServer mockServer;
     @Autowired
     private WebTestClient webTestClient;
+    @Autowired
+    private DataSource dataSource;
 
     @BeforeAll
     public static void beforeAll() {
         mockServer = startClientAndServer(8081);
-        // Set the default agenda and lat lon in the db to be used for these tests.
-
     }
 
     @AfterAll
     public static void afterAll() {
         mockServer.stop();
+    }
+
+    @BeforeEach
+    public void beforeEach() {
+        Operation operation =
+                sequenceOf(
+                        DELETE_ALL,
+                        insertInto("AGENDA")
+                                .columns("ID","DEFAULT_AGENDA", "LAT_LON")
+                                .values(1, true, "testLatLon")
+                                .build(),
+                        insertInto("AGENDA_ITEM")
+                                .columns("ID","NAME", "START_DATE_TIME", "END_DATE_TIME")
+                                .values(1, "testAgendaItem", START_DATE_TIME, END_DATE_TIME)
+                                .build(),
+                        insertInto("AGENDA_AGENDA_ITEMS")
+                                .columns("AGENDA_ID", "AGENDA_ITEMS_ID")
+                                .values(1, 1)
+                                .build());
+
+        new DbSetup(new DataSourceDestination(dataSource), operation).launch();
     }
 
     @SneakyThrows
@@ -45,7 +75,18 @@ public class AgendaByWeatherAT {
 
     @Test
     public void testGetDefaultAgendaWeather_NoDefaultAgendaSet_AgendaWithoutLatLon() {
+        // Delete the db for this test so it acts like it would on first start up.
+        new DbSetup(new DataSourceDestination(dataSource), DELETE_ALL).launch();
 
+        var expected = Agenda.builder().defaultAgenda(true).build();
+
+        webTestClient.get().uri("/agenda-weather")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Agenda.class).value(actual -> {
+                    Assertions.assertEquals(expected.isDefaultAgenda(), actual.isDefaultAgenda());
+                    Assertions.assertTrue(CollectionUtils.isEmpty(actual.getAgendaItems()));
+                });
     }
 
 //    @SneakyThrows

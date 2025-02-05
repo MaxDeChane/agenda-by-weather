@@ -2,13 +2,17 @@ package com.codenumnum.agendabyweather.service;
 
 import com.codenumnum.agendabyweather.dao.domain.WeatherUrls;
 import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
+import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
 import com.codenumnum.agendabyweather.dao.repository.AgendaRepository;
+import com.codenumnum.agendabyweather.service.domain.AddAgendaItemStatusEnum;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.HashSet;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -41,5 +45,29 @@ public class AgendaService {
         defaultAgenda.setHourlyWeatherForecastUrl(weatherUrls.getForecastHourlyUrl());
 
         return agendaRepository.save(defaultAgenda);
+    }
+
+    public AddAgendaItemStatusEnum addNewAgendaItem(String latLon, AgendaItem agendaItem) {
+        Agenda agenda = agendaRepository.findByLatLon(latLon);
+        if(agenda == null) {
+            return AddAgendaItemStatusEnum.NO_AGENDA_WITH_LAT_LON;
+        }
+
+        var agendaItems = agenda.getAgendaItems();
+
+        if(agendaItems == null) {
+            agendaItems = new HashSet<>();
+        }
+
+        agendaItems.add(agendaItem);
+
+        try {
+            agendaRepository.save(agenda);
+        } catch (Exception e) {
+            log.error("Error saving agenda item", e);
+            return AddAgendaItemStatusEnum.ERROR;
+        }
+
+        return AddAgendaItemStatusEnum.ADDED;
     }
 }

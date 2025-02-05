@@ -7,6 +7,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Objects;
+import java.util.Set;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -17,12 +20,15 @@ public class Agenda {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     Integer id;
+    @Column(unique=true)
     @Builder.Default
     String latLon = "";
     @Column(nullable = false)
     boolean defaultAgenda;
     String hourlyWeatherForecastUrl;
     String generalWeatherForecastUrl;
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    Set<AgendaItem> agendaItems;
     /*Don't save the actual weather forecast since it will be stored
      as just a json string in the db. If we want to filter based on any
      fields in the forecast they will be extracted out to their own columns
@@ -32,4 +38,15 @@ public class Agenda {
     WeatherForecast hourlyWeatherForecast;
     @Transient
     WeatherForecast generalWeatherForecast;
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Agenda agenda)) return false;
+        return Objects.equals(id, agenda.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
 }

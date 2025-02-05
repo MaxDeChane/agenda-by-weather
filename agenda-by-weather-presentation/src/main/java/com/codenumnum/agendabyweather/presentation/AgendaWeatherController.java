@@ -3,8 +3,10 @@ package com.codenumnum.agendabyweather.presentation;
 import com.codenumnum.agendabyweather.dao.GeocodingApiDao;
 import com.codenumnum.agendabyweather.dao.domain.WeatherUrls;
 import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
+import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
 import com.codenumnum.agendabyweather.service.AgendaService;
 import com.codenumnum.agendabyweather.service.WeatherService;
+import com.codenumnum.agendabyweather.service.domain.AddAgendaItemStatusEnum;
 import io.micrometer.common.util.StringUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -60,5 +62,10 @@ public class AgendaWeatherController {
         }
 
         return agenda;
+    }
+
+    @PutMapping("/agenda-item/{latLon}")
+    public AddAgendaItemStatusEnum updateLatLon(@PathVariable String latLon, @RequestBody AgendaItem agendaItem) {
+        return agendaService.addNewAgendaItem(latLon, agendaItem);
     }
 }
