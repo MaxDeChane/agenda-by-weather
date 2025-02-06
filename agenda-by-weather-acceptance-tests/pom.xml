@@ -13,7 +13,7 @@
     <dependencies>
         <dependency>
             <groupId>com.codenumnum</groupId>
-            <artifactId>agenda-by-weather-presentation</artifactId>
+            <artifactId>agenda-by-weather-presentation-acceptance-tests</artifactId>
             <version>${project.version}</version>
             <!-- Remove the sqlite for testing so an in memory db will be used -->
             <exclusions>
@@ -45,4 +45,16 @@
             <version>5.14.0</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.codenumnum.agendabyweather.AgendaByWeatherApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

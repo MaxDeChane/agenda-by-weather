@@ -35,6 +35,30 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-proc:full</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-install-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>install-file</goal>
+                                </goals>
+                                <phase>install</phase>
+                                <configuration>
+                                    <file>${project.build.directory}/${project.build.finalName}.jar</file>
+                                    <artifactId>${project.artifactId}-acceptance-tests</artifactId>
+                                    <groupId>${project.groupId}</groupId>
+                                    <version>${project.version}</version>
+                                    <packaging>jar</packaging>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
