@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -18,8 +19,8 @@ import java.util.Set;
 public class Agenda {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    Integer id;
+    @Builder.Default
+    UUID id = UUID.randomUUID();
     @Column(unique=true)
     @Builder.Default
     String latLon = "";

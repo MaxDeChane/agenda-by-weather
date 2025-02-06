@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -17,8 +18,9 @@ import java.util.Objects;
 public class AgendaItem {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    Integer id;
+    @Builder.Default
+    UUID id = UUID.randomUUID();
+    @Column(unique = true, nullable = false)
     String name;
     OffsetDateTime startDateTime;
     OffsetDateTime endDateTime;
