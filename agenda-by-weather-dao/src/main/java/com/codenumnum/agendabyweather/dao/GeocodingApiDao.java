@@ -2,6 +2,7 @@ package com.codenumnum.agendabyweather.dao;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -14,9 +15,9 @@ public class GeocodingApiDao {
 
     WebClient webClient;
 
-    public GeocodingApiDao(WebClient.Builder webClientBuilder) {
+    public GeocodingApiDao(WebClient.Builder webClientBuilder, @Value("${geocoding-api.onelineaddress.url}") String oneLineAddressUrl) {
         this.webClient = webClientBuilder
-                .baseUrl("https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address={address}&benchmark=4&format=json")
+                .baseUrl(oneLineAddressUrl)
                 .build();
     }
 

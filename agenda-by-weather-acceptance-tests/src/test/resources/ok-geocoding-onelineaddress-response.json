@@ -1,0 +1,42 @@
+{
+  "result": {
+    "input": {
+      "address": {
+        "address": "2 East Main Street, Madison, WI 53702"
+      },
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      }
+    },
+    "addressMatches": [
+      {
+        "tigerLine": {
+          "side": "L",
+          "tigerLineId": "49472500"
+        },
+        "coordinates": {
+          "x": -89.383113444699,
+          "y": 43.073992058664
+        },
+        "addressComponents": {
+          "zip": "53703",
+          "streetName": "MAIN",
+          "preType": "",
+          "city": "MADISON",
+          "preDirection": "E",
+          "suffixDirection": "",
+          "fromAddress": "2",
+          "state": "WI",
+          "suffixType": "ST",
+          "toAddress": "98",
+          "suffixQualifier": "",
+          "preQualifier": ""
+        },
+        "matchedAddress": "2 E MAIN ST, MADISON, WI, 53703"
+      }
+    ]
+  }
+}

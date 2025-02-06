@@ -59,8 +59,8 @@
     "gridId": "BOU",
     "gridX": 111,
     "gridY": 55,
-    "forecast": "http://localhost:8081/gridpoints/BOU/111,55/forecast",
-    "forecastHourly": "http://localhost:8081/gridpoints/BOU/111,55/forecast/hourly",
+    "forecast": "http://localhost:8081/generalWeather",
+    "forecastHourly": "http://localhost:8081/hourlyWeather",
     "forecastGridData": "http://localhost:8081/gridpoints/BOU/111,55",
     "observationStations": "http://localhost:8081/gridpoints/BOU/111,55/stations",
     "relativeLocation": {
