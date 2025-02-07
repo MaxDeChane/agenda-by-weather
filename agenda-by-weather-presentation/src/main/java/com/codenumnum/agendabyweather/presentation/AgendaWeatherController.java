@@ -7,12 +7,14 @@ import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
 import com.codenumnum.agendabyweather.service.AgendaService;
 import com.codenumnum.agendabyweather.service.WeatherService;
 import com.codenumnum.agendabyweather.service.domain.AddAgendaItemStatusEnum;
-import io.micrometer.common.util.StringUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -32,7 +34,7 @@ public class AgendaWeatherController {
         // If there is no latitude or longitude set yet then this must be the initial request
         // for this agenda so return to the front end as is so it knows to ask the user where
         // they want the weather from.
-        if(StringUtils.isEmpty(defaultAgenda.getLatLon())) {
+        if(!StringUtils.hasText(defaultAgenda.getLatLon())) {
             return defaultAgenda;
         }
 
@@ -66,6 +68,9 @@ public class AgendaWeatherController {
 
     @PutMapping("/agenda-item/{latLon}")
     public AddAgendaItemStatusEnum updateLatLon(@PathVariable String latLon, @RequestBody AgendaItem agendaItem) {
+        if(!StringUtils.hasText(agendaItem.getName())) {
+            agendaItem.setName("Untitled_" + Instant.now());
+        }
         return agendaService.addNewAgendaItem(latLon, agendaItem);
     }
 }
