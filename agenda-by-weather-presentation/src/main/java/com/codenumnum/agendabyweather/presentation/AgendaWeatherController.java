@@ -11,6 +11,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -72,5 +73,11 @@ public class AgendaWeatherController {
             agendaItem.setName("Untitled_" + Instant.now());
         }
         return agendaService.addNewAgendaItem(latLon, agendaItem);
+    }
+
+    @DeleteMapping("/{latLon}/agenda-item/{name}")
+    public ResponseEntity<Void> deleteAgendaItem(@PathVariable String latLon, @PathVariable String name) {
+        agendaService.deleteAgendaItem(latLon, name);
+        return ResponseEntity.ok().build();
     }
 }

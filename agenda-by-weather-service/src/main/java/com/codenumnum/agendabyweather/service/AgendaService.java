@@ -3,6 +3,7 @@ package com.codenumnum.agendabyweather.service;
 import com.codenumnum.agendabyweather.dao.domain.WeatherUrls;
 import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
 import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
+import com.codenumnum.agendabyweather.dao.repository.AgendaItemRepository;
 import com.codenumnum.agendabyweather.dao.repository.AgendaRepository;
 import com.codenumnum.agendabyweather.service.domain.AddAgendaItemStatusEnum;
 import jakarta.transaction.Transactional;
@@ -22,6 +23,7 @@ import java.util.HashSet;
 public class AgendaService {
 
     AgendaRepository agendaRepository;
+    AgendaItemRepository agendaItemRepository;
 
     public Agenda retrieveDefaultAgendaCreatingIfNotPresent() {
         var agendaOptional = agendaRepository.findByDefaultAgenda(true);
@@ -69,5 +71,9 @@ public class AgendaService {
         }
 
         return AddAgendaItemStatusEnum.ADDED;
+    }
+
+    public void deleteAgendaItem(String latLon, String name) {
+        agendaItemRepository.deleteAgendaItemByLatLonAndName(latLon, name);
     }
 }

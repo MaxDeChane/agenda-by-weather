@@ -11,6 +11,8 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.jdbc.JdbcTestUtils;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ResourceUtils;
@@ -42,6 +44,8 @@ public class AgendaByWeatherAcceptanceTest {
     private WebTestClient webTestClient;
     @Autowired
     private DataSource dataSource;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @BeforeAll
     public static void beforeAll() {
@@ -149,5 +153,30 @@ public class AgendaByWeatherAcceptanceTest {
                     Assertions.assertEquals("Sunny", actual.getHourlyWeatherForecast().properties().periods().get(0).shortForecast());
                     Assertions.assertEquals("Slight Chance Light Snow", actual.getHourlyWeatherForecast().properties().periods().get(155).shortForecast());
                 });
+    }
+
+    @Test
+    public void testDeleteAgendaItem_2AgendaItemsInDb_OneAgendaItem() {
+        Operation operation =
+                sequenceOf(
+                    insertInto("AGENDA_ITEM")
+                            .columns("NAME", "START_DATE_TIME", "END_DATE_TIME")
+                            .values("newItem", START_DATE_TIME, END_DATE_TIME)
+                            .build(),
+                    insertInto("AGENDA_AGENDA_ITEMS")
+                            .columns("AGENDA_ID", "AGENDA_ITEMS_NAME")
+                            .values(AGENDA_UUID, "newItem")
+                            .build());
+
+        new DbSetup(new DataSourceDestination(dataSource), operation).launch();
+
+        webTestClient.delete().uri("/agenda-weather/testLatLon/agenda-item/newItem")
+                .exchange()
+                .expectStatus().isOk();
+
+        int aaiRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_AGENDA_ITEMS", "AGENDA_ITEMS_NAME <> ''");
+        int agendaItemsRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_ITEM", "NAME <> ''");
+        Assertions.assertEquals(1, aaiRowCount);
+        Assertions.assertEquals(1, agendaItemsRowCount);
     }
 }
