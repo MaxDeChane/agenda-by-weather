@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 @Data
 @Builder
@@ -18,9 +17,6 @@ import java.util.UUID;
 public class AgendaItem {
 
     @Id
-    @Builder.Default
-    UUID id = UUID.randomUUID();
-    @Column(unique = true, nullable = false)
     String name;
     OffsetDateTime startDateTime;
     OffsetDateTime endDateTime;
@@ -28,11 +24,11 @@ public class AgendaItem {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof AgendaItem that)) return false;
-        return Objects.equals(id, that.id);
+        return Objects.equals(name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id);
+        return Objects.hashCode(name);
     }
 }

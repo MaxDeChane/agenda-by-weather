@@ -10,7 +10,6 @@ import org.junit.jupiter.api.*;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.util.CollectionUtils;
@@ -34,7 +33,6 @@ import static org.mockserver.model.HttpResponse.response;
 public class AgendaByWeatherAcceptanceTest {
 
     private static final UUID AGENDA_UUID = UUID.randomUUID();
-    private static final UUID AGENDA_ITEM_UUID = UUID.randomUUID();
     // Default testing agenda date which is an hour apart
     private static final OffsetDateTime START_DATE_TIME = OffsetDateTime.of(LocalDateTime.of(2025, 1, 5, 12, 0), ZoneOffset.ofHours(6));
     private static final OffsetDateTime END_DATE_TIME = OffsetDateTime.of(LocalDateTime.of(2025, 1, 5, 13, 0), ZoneOffset.ofHours(6));
@@ -65,12 +63,12 @@ public class AgendaByWeatherAcceptanceTest {
                                 .values(AGENDA_UUID, true, "testLatLon", "http://localhost:8081/generalWeather", "http://localhost:8081/hourlyWeather")
                                 .build(),
                         insertInto("AGENDA_ITEM")
-                                .columns("ID","NAME", "START_DATE_TIME", "END_DATE_TIME")
-                                .values(AGENDA_ITEM_UUID, "testAgendaItem", START_DATE_TIME, END_DATE_TIME)
+                                .columns("NAME", "START_DATE_TIME", "END_DATE_TIME")
+                                .values("testAgendaItem", START_DATE_TIME, END_DATE_TIME)
                                 .build(),
                         insertInto("AGENDA_AGENDA_ITEMS")
-                                .columns("AGENDA_ID", "AGENDA_ITEMS_ID")
-                                .values(AGENDA_UUID, AGENDA_ITEM_UUID)
+                                .columns("AGENDA_ID", "AGENDA_ITEMS_NAME")
+                                .values(AGENDA_UUID, "testAgendaItem")
                                 .build());
 
         new DbSetup(new DataSourceDestination(dataSource), operation).launch();
