@@ -12,6 +12,8 @@ import java.util.Optional;
 @Repository
 public interface AgendaItemRepository extends JpaRepository<AgendaItem, String> {
 
+    Optional<AgendaItem> findByName(String name);
+
     @Modifying
     @NativeQuery(value = "delete from AGENDA_AGENDA_ITEMS where AGENDA_ITEMS_ID = (select ID from AGENDA_ITEM where NAME = ?2) and AGENDA_ID = (select ID from AGENDA where LAT_LON = ?1);" +
                          "delete from AGENDA_ITEM where NAME = ?2;")

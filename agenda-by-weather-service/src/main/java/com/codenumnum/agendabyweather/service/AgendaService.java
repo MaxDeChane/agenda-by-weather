@@ -5,14 +5,16 @@ import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
 import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
 import com.codenumnum.agendabyweather.dao.repository.AgendaItemRepository;
 import com.codenumnum.agendabyweather.dao.repository.AgendaRepository;
-import com.codenumnum.agendabyweather.service.domain.AddAgendaItemStatusEnum;
+import com.codenumnum.agendabyweather.service.domain.AgendaItemCrudStatusEnum;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.time.Instant;
 import java.util.HashSet;
 
 @Slf4j
@@ -49,16 +51,22 @@ public class AgendaService {
         return agendaRepository.save(defaultAgenda);
     }
 
-    public AddAgendaItemStatusEnum addNewAgendaItem(String latLon, AgendaItem agendaItem) {
+    public AgendaItemCrudStatusEnum addNewAgendaItem(String latLon, AgendaItem agendaItem) {
         Agenda agenda = agendaRepository.findByLatLon(latLon);
         if(agenda == null) {
-            return AddAgendaItemStatusEnum.NO_AGENDA_WITH_LAT_LON;
+            return AgendaItemCrudStatusEnum.NO_AGENDA_WITH_LAT_LON;
+        }
+
+        if(!StringUtils.hasText(agendaItem.getName())) {
+            agendaItem.setName("Untitled_" + Instant.now());
         }
 
         var agendaItems = agenda.getAgendaItems();
 
         if(agendaItems == null) {
             agendaItems = new HashSet<>();
+        } else if(agendaItems.contains(agendaItem)) {
+            return AgendaItemCrudStatusEnum.ALREADY_EXISTS;
         }
 
         agendaItems.add(agendaItem);
@@ -67,10 +75,31 @@ public class AgendaService {
             agendaRepository.save(agenda);
         } catch (Exception e) {
             log.error("Error saving agenda item", e);
-            return AddAgendaItemStatusEnum.ERROR;
+            return AgendaItemCrudStatusEnum.ERROR;
         }
 
-        return AddAgendaItemStatusEnum.ADDED;
+        return AgendaItemCrudStatusEnum.ADDED;
+    }
+
+    //TODO latLon will be used for future functionality
+    public AgendaItemCrudStatusEnum updateAgendaItem(String latLon, String originalName, AgendaItem updatedAgendaItem) {
+
+        var existingAgendaItem = agendaItemRepository.findByName(originalName);
+
+        if(existingAgendaItem.isEmpty()) {
+            return AgendaItemCrudStatusEnum.NO_AGENDA_ITEM_WITH_NAME;
+        }
+
+        existingAgendaItem.get().performFullAgendaTransfer(updatedAgendaItem);
+
+        try {
+            agendaItemRepository.save(existingAgendaItem.get());
+        } catch (Exception e) {
+            log.error("Error saving agenda item", e);
+            return AgendaItemCrudStatusEnum.ERROR;
+        }
+
+        return AgendaItemCrudStatusEnum.UPDATED;
     }
 
     public void deleteAgendaItem(String latLon, String name) {

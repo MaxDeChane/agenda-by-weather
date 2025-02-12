@@ -25,6 +25,20 @@ public class AgendaItem {
     OffsetDateTime startDateTime;
     OffsetDateTime endDateTime;
 
+    /**
+     * This is to take an updated unmanaged object from the request and
+     * transfer its fields to the hibernate managed object. As of now it
+     * just does a one to one transfer so if more is needed in field
+     * equality check before saving this is not the method to use.
+     *
+     * @param updatedAgendaItem
+     */
+    public void performFullAgendaTransfer(AgendaItem updatedAgendaItem) {
+        this.name = updatedAgendaItem.getName();
+        this.startDateTime = updatedAgendaItem.getStartDateTime();
+        this.endDateTime = updatedAgendaItem.getEndDateTime();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof AgendaItem that)) return false;

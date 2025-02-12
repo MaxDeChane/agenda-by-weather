@@ -2,6 +2,8 @@ package com.codenumnum.agendabyweather.acceptance.tests;
 
 import com.codenumnum.agendabyweather.AgendaByWeatherApplication;
 import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
+import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
+import com.codenumnum.agendabyweather.service.domain.AgendaItemCrudStatusEnum;
 import com.ninja_squad.dbsetup.DbSetup;
 import com.ninja_squad.dbsetup.destination.DataSourceDestination;
 import com.ninja_squad.dbsetup.operation.Operation;
@@ -10,7 +12,6 @@ import org.junit.jupiter.api.*;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.jdbc.JdbcTestUtils;
@@ -25,6 +26,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import static com.ninja_squad.dbsetup.Operations.*;
@@ -155,6 +157,45 @@ public class AgendaByWeatherAcceptanceTest {
                     Assertions.assertEquals("Sunny", actual.getHourlyWeatherForecast().properties().periods().get(0).shortForecast());
                     Assertions.assertEquals("Slight Chance Light Snow", actual.getHourlyWeatherForecast().properties().periods().get(155).shortForecast());
                 });
+    }
+
+    @Test
+    public void testUpdateAgendaItem_UpdateAllFieldsOnExistingItem_AllAgendaItemFieldsUpdated() {
+        var newStartDateTime = OffsetDateTime.parse("2024-02-12T10:15:00+01:00");
+        var newEndDateTime = OffsetDateTime.parse("2024-02-12T11:15:00+01:00");
+
+        var updateAgendaItem = AgendaItem.builder().name("newItem").startDateTime(newStartDateTime).endDateTime(newEndDateTime).build();
+
+        webTestClient.put().uri("/agenda-weather/testLatLon/agenda-item/testAgendaItem")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(updateAgendaItem)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(AgendaItemCrudStatusEnum.class)
+                .isEqualTo(AgendaItemCrudStatusEnum.UPDATED);
+
+        String whereClause = String.format("ID = '%s' and NAME = 'newItem' and START_DATE_TIME = '%s' and  END_DATE_TIME = '%s'",
+                AGENDA_ITEM_UUID, newStartDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME), newEndDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        int agendaItemsRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_ITEM", whereClause);
+        Assertions.assertEquals(1, agendaItemsRowCount);
+    }
+
+    @Test
+    public void testUpdateAgendaItem_UpdateJustNameOnExistingItem_OnlyAllAgendaNameUpdated() {
+        var updateAgendaItem = AgendaItem.builder().name("newItem").startDateTime(START_DATE_TIME).endDateTime(END_DATE_TIME).build();
+
+        webTestClient.put().uri("/agenda-weather/testLatLon/agenda-item/testAgendaItem")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(updateAgendaItem)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(AgendaItemCrudStatusEnum.class)
+                .isEqualTo(AgendaItemCrudStatusEnum.UPDATED);
+
+        String whereClause = String.format("ID = '%s' and NAME = 'newItem' and START_DATE_TIME = '%s' and  END_DATE_TIME = '%s'",
+                AGENDA_ITEM_UUID, START_DATE_TIME.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME), END_DATE_TIME.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        int agendaItemsRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_ITEM", whereClause);
+        Assertions.assertEquals(1, agendaItemsRowCount);
     }
 
     @Test
