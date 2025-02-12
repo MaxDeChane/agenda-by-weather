@@ -159,15 +159,16 @@ public class AgendaByWeatherAcceptanceTest {
 
     @Test
     public void testDeleteAgendaItem_2AgendaItemsInDb_OneAgendaItem() {
+        UUID newAgendaItemUuid = UUID.randomUUID();
         Operation operation =
                 sequenceOf(
                     insertInto("AGENDA_ITEM")
-                            .columns("NAME", "START_DATE_TIME", "END_DATE_TIME")
-                            .values("newItem", START_DATE_TIME, END_DATE_TIME)
+                            .columns("ID", "NAME", "START_DATE_TIME", "END_DATE_TIME")
+                            .values(newAgendaItemUuid, "newItem", START_DATE_TIME, END_DATE_TIME)
                             .build(),
                     insertInto("AGENDA_AGENDA_ITEMS")
-                            .columns("AGENDA_ID", "AGENDA_ITEMS_NAME")
-                            .values(AGENDA_UUID, "newItem")
+                            .columns("AGENDA_ID", "AGENDA_ITEMS_ID")
+                            .values(AGENDA_UUID, newAgendaItemUuid)
                             .build());
 
         new DbSetup(new DataSourceDestination(dataSource), operation).launch();
@@ -176,7 +177,7 @@ public class AgendaByWeatherAcceptanceTest {
                 .exchange()
                 .expectStatus().isOk();
 
-        int aaiRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_AGENDA_ITEMS", "AGENDA_ITEMS_NAME <> ''");
+        int aaiRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_AGENDA_ITEMS", "AGENDA_ITEMS_ID IS NOT NULL");
         int agendaItemsRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_ITEM", "NAME <> ''");
         Assertions.assertEquals(1, aaiRowCount);
         Assertions.assertEquals(1, agendaItemsRowCount);
