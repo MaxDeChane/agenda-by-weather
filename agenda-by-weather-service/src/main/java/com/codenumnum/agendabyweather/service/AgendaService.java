@@ -95,15 +95,21 @@ public class AgendaService {
         try {
             agendaItemRepository.save(existingAgendaItem.get());
         } catch (Exception e) {
-            log.error("Error saving agenda item", e);
+            log.error("Error updating agenda item with original name {}", originalName, e);
             return AgendaItemCrudStatusEnum.ERROR;
         }
 
         return AgendaItemCrudStatusEnum.UPDATED;
     }
 
-    public void deleteAgendaItem(String latLon, String name) {
-        agendaItemRepository.deleteAgendaItemsEntry(latLon, name);
-        agendaItemRepository.deleteAgendaItemByName(name);
+    public AgendaItemCrudStatusEnum deleteAgendaItem(String latLon, String name) {
+        try {
+            agendaItemRepository.deleteAgendaItemsEntry(latLon, name);
+            agendaItemRepository.deleteAgendaItemByName(name);
+            return AgendaItemCrudStatusEnum.DELETED;
+        } catch (Exception e) {
+            log.error("Error deleting agenda item with name {}", name, e);
+            return AgendaItemCrudStatusEnum.ERROR;
+        }
     }
 }

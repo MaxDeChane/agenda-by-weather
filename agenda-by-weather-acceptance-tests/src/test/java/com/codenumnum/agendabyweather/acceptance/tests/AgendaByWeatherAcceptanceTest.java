@@ -216,7 +216,9 @@ public class AgendaByWeatherAcceptanceTest {
 
         webTestClient.delete().uri("/agenda-weather/test,-LatLon/agenda-item/newItem")
                 .exchange()
-                .expectStatus().isOk();
+                .expectStatus().isOk()
+                .expectBody(AgendaItemCrudStatusEnum.class)
+                .isEqualTo(AgendaItemCrudStatusEnum.DELETED);;
 
         int aaiRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_AGENDA_ITEMS", "AGENDA_ITEMS_ID IS NOT NULL");
         int agendaItemsRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_ITEM", "NAME <> ''");

@@ -76,8 +76,7 @@ public class AgendaWeatherController {
     }
 
     @DeleteMapping("/{latLon}/agenda-item/{name}")
-    public ResponseEntity<Void> deleteAgendaItem(@PathVariable String latLon, @PathVariable String name) {
-        agendaService.deleteAgendaItem(latLon, name);
-        return ResponseEntity.ok().build();
+    public AgendaItemCrudStatusEnum deleteAgendaItem(@PathVariable String latLon, @PathVariable String name) {
+        return agendaService.deleteAgendaItem(latLon, name);
     }
 }
