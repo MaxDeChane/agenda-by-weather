@@ -103,6 +103,7 @@ public class AgendaService {
     }
 
     public void deleteAgendaItem(String latLon, String name) {
-        agendaItemRepository.deleteAgendaItemByLatLonAndName(latLon, name);
+        agendaItemRepository.deleteAgendaItemsEntry(latLon, name);
+        agendaItemRepository.deleteAgendaItemByName(name);
     }
 }

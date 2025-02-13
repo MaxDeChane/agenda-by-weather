@@ -14,8 +14,16 @@ public interface AgendaItemRepository extends JpaRepository<AgendaItem, String> 
 
     Optional<AgendaItem> findByName(String name);
 
+    /*
+    These should be called one after the other to delete the entry in the joining table between
+    agenda and items before deleting the agenda item. This is done separately since sqlite doesn't
+    support them in one.
+     */
     @Modifying
-    @NativeQuery(value = "delete from AGENDA_AGENDA_ITEMS where AGENDA_ITEMS_ID = (select ID from AGENDA_ITEM where NAME = ?2) and AGENDA_ID = (select ID from AGENDA where LAT_LON = ?1);" +
-                         "delete from AGENDA_ITEM where NAME = ?2;")
-    void deleteAgendaItemByLatLonAndName(String latLon, String name);
+    @NativeQuery(value = "delete from AGENDA_AGENDA_ITEMS where AGENDA_ITEMS_ID = (select ID from AGENDA_ITEM where NAME = ?2) and AGENDA_ID = (select ID from AGENDA where LAT_LON = ?1);")
+    void deleteAgendaItemsEntry(String latLon, String name);
+
+    @Modifying
+    @NativeQuery(value = "delete from AGENDA_ITEM where NAME = ?1;")
+    void deleteAgendaItemByName(String name);
 }

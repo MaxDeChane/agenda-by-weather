@@ -68,7 +68,7 @@ public class AgendaByWeatherAcceptanceTest {
                         DELETE_ALL,
                         insertInto("AGENDA")
                                 .columns("ID","DEFAULT_AGENDA", "LAT_LON", "GENERAL_WEATHER_FORECAST_URL", "HOURLY_WEATHER_FORECAST_URL")
-                                .values(AGENDA_UUID, true, "testLatLon", "http://localhost:8081/generalWeather", "http://localhost:8081/hourlyWeather")
+                                .values(AGENDA_UUID, true, "test,-LatLon", "http://localhost:8081/generalWeather", "http://localhost:8081/hourlyWeather")
                                 .build(),
                         insertInto("AGENDA_ITEM")
                                 .columns("ID","NAME", "START_DATE_TIME", "END_DATE_TIME")
@@ -121,7 +121,7 @@ public class AgendaByWeatherAcceptanceTest {
                 .expectStatus().isOk()
                 .expectBody(Agenda.class).value(actual -> {
                     Assertions.assertTrue(actual.isDefaultAgenda());
-                    Assertions.assertEquals("testLatLon", actual.getLatLon());
+                    Assertions.assertEquals("test,-LatLon", actual.getLatLon());
                     Assertions.assertEquals("This Afternoon", actual.getGeneralWeatherForecast().properties().periods().get(0).name());
                     Assertions.assertEquals("Wednesday Night", actual.getGeneralWeatherForecast().properties().periods().get(13).name());
                     Assertions.assertEquals("Sunny", actual.getHourlyWeatherForecast().properties().periods().get(0).shortForecast());
@@ -166,7 +166,7 @@ public class AgendaByWeatherAcceptanceTest {
 
         var updateAgendaItem = AgendaItem.builder().name("newItem").startDateTime(newStartDateTime).endDateTime(newEndDateTime).build();
 
-        webTestClient.put().uri("/agenda-weather/testLatLon/agenda-item/testAgendaItem")
+        webTestClient.put().uri("/agenda-weather/test,-LatLon/agenda-item/testAgendaItem")
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .bodyValue(updateAgendaItem)
                 .exchange()
@@ -184,7 +184,7 @@ public class AgendaByWeatherAcceptanceTest {
     public void testUpdateAgendaItem_UpdateJustNameOnExistingItem_OnlyAllAgendaNameUpdated() {
         var updateAgendaItem = AgendaItem.builder().name("newItem").startDateTime(START_DATE_TIME).endDateTime(END_DATE_TIME).build();
 
-        webTestClient.put().uri("/agenda-weather/testLatLon/agenda-item/testAgendaItem")
+        webTestClient.put().uri("/agenda-weather/test,-LatLon/agenda-item/testAgendaItem")
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .bodyValue(updateAgendaItem)
                 .exchange()
@@ -214,7 +214,7 @@ public class AgendaByWeatherAcceptanceTest {
 
         new DbSetup(new DataSourceDestination(dataSource), operation).launch();
 
-        webTestClient.delete().uri("/agenda-weather/testLatLon/agenda-item/newItem")
+        webTestClient.delete().uri("/agenda-weather/test,-LatLon/agenda-item/newItem")
                 .exchange()
                 .expectStatus().isOk();
 
