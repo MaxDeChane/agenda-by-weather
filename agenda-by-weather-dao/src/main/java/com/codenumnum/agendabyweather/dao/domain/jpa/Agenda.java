@@ -1,16 +1,18 @@
 package com.codenumnum.agendabyweather.dao.domain.jpa;
 
 import com.codenumnum.agendabyweather.dao.domain.WeatherForecast;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.util.StringUtils;
 
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+@Log4j2
 @Data
 @Builder
 @AllArgsConstructor
@@ -37,8 +39,52 @@ public class Agenda {
      not in the db.*/
     @Transient
     WeatherForecast hourlyWeatherForecast;
+    @JsonIgnore
+    @Lob
+    String hourlyWeatherForecastJson;
     @Transient
     WeatherForecast generalWeatherForecast;
+    @JsonIgnore
+    @Lob
+    String generalWeatherForecastJson;
+
+    @SneakyThrows
+    public void updateWeatherForecasts(WeatherForecast generalWeatherForecast, WeatherForecast hourlyWeatherForecast,
+                                          ObjectMapper objectMapper) {
+        if(generalWeatherForecast != null) {
+            if (StringUtils.hasText(this.generalWeatherForecastJson)) {
+                var forecastFromJson = objectMapper.readValue(this.generalWeatherForecastJson, WeatherForecast.class);
+                var oldProperties = forecastFromJson.properties();
+                var newProperties = generalWeatherForecast.properties();
+                if (oldProperties.weatherNeedsUpdate(newProperties)) {
+                    var combinedProperties = oldProperties.updateWeather(newProperties);
+                    this.generalWeatherForecast = new WeatherForecast(combinedProperties);
+                    this.generalWeatherForecastJson = objectMapper.writeValueAsString(generalWeatherForecast);
+                }
+            } else {
+                log.info("No weather forecast json found so just setting it new.");
+                this.generalWeatherForecast = generalWeatherForecast;
+                this.generalWeatherForecastJson = objectMapper.writeValueAsString(generalWeatherForecast);
+            }
+        }
+
+        if(hourlyWeatherForecast != null) {
+            if (StringUtils.hasText(this.hourlyWeatherForecastJson)) {
+                var forecastFromJson = objectMapper.readValue(this.hourlyWeatherForecastJson, WeatherForecast.class);
+                var oldProperties = forecastFromJson.properties();
+                var newProperties = hourlyWeatherForecast.properties();
+                if (oldProperties.weatherNeedsUpdate(newProperties)) {
+                    var combinedProperties = oldProperties.updateWeather(newProperties);
+                    this.hourlyWeatherForecast = new WeatherForecast(combinedProperties);
+                    hourlyWeatherForecastJson = objectMapper.writeValueAsString(hourlyWeatherForecast);
+                }
+            } else {
+                log.info("No weather forecast json found so just setting it new.");
+                this.hourlyWeatherForecast = hourlyWeatherForecast;
+                this.hourlyWeatherForecastJson = objectMapper.writeValueAsString(hourlyWeatherForecast);
+            }
+        }
+    }
 
     @Override
     public boolean equals(Object o) {

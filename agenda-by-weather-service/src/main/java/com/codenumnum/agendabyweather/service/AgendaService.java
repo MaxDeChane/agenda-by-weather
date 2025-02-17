@@ -6,6 +6,7 @@ import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
 import com.codenumnum.agendabyweather.dao.repository.AgendaItemRepository;
 import com.codenumnum.agendabyweather.dao.repository.AgendaRepository;
 import com.codenumnum.agendabyweather.service.domain.AgendaItemCrudStatusEnum;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -26,23 +27,36 @@ public class AgendaService {
 
     AgendaRepository agendaRepository;
     AgendaItemRepository agendaItemRepository;
+    WeatherService weatherService;
+    ObjectMapper objectMapper;
 
     public Agenda retrieveDefaultAgendaCreatingIfNotPresent() {
         var agendaOptional = agendaRepository.findByDefaultAgenda(true);
 
+        Agenda defaultAgenda;
         if (agendaOptional.isPresent()) {
-            log.info("Found default agenda");
-            return agendaOptional.get();
+            log.info("Found default agenda. Update weather.");
+            defaultAgenda = agendaOptional.get();
+            try {
+                defaultAgenda.updateWeatherForecasts(weatherService.retrieveWeatherForecast(defaultAgenda.getGeneralWeatherForecastUrl()),
+                        weatherService.retrieveWeatherForecast(defaultAgenda.getHourlyWeatherForecastUrl()), objectMapper);
+            } catch (Exception e) {
+                // Just catch but still return the agenda so the info there can be used.
+                log.error("Error retrieving weather forecast. Just returning the agenda", e);
+            }
+        } else {
+            log.info("Default agenda not found so creating new one");
+            // Initial will have a value of empty so the front end knows to get
+            // the info from the user.
+            defaultAgenda = Agenda.builder().defaultAgenda(true).build();
         }
 
-        log.info("Default agenda not found so creating new one");
-        // Initial will have a value of empty so the front end knows to get
-        // the info from the user.
-        Agenda.AgendaBuilder builder = Agenda.builder().defaultAgenda(true);
-        return agendaRepository.save(builder.build());
+
+        return agendaRepository.save(defaultAgenda);
     }
 
-    public Agenda updateAgendaWeatherBaseInfo(String latLon, WeatherUrls weatherUrls) {
+    public Agenda updateAgendaWeatherBaseInfo(String latLon) {
+        WeatherUrls weatherUrls = weatherService.retrieveWeatherUrls(latLon);
         Agenda defaultAgenda = retrieveDefaultAgendaCreatingIfNotPresent();
         defaultAgenda.setLatLon(latLon);
         defaultAgenda.setGeneralWeatherForecastUrl(weatherUrls.getForecastUrl());
