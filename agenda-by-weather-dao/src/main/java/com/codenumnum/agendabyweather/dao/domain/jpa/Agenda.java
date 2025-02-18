@@ -49,41 +49,62 @@ public class Agenda {
     String generalWeatherForecastJson;
 
     @SneakyThrows
-    public void updateWeatherForecasts(WeatherForecast generalWeatherForecast, WeatherForecast hourlyWeatherForecast,
-                                          ObjectMapper objectMapper) {
-        if(generalWeatherForecast != null) {
+    public void updateGeneralWeatherForecast(WeatherForecast updatedGeneralWeatherForecast, ObjectMapper objectMapper) {
             if (StringUtils.hasText(this.generalWeatherForecastJson)) {
                 var forecastFromJson = objectMapper.readValue(this.generalWeatherForecastJson, WeatherForecast.class);
-                var oldProperties = forecastFromJson.properties();
-                var newProperties = generalWeatherForecast.properties();
-                if (oldProperties.weatherNeedsUpdate(newProperties)) {
-                    var combinedProperties = oldProperties.updateWeather(newProperties);
-                    this.generalWeatherForecast = new WeatherForecast(combinedProperties);
-                    this.generalWeatherForecastJson = objectMapper.writeValueAsString(generalWeatherForecast);
+                if(updatedGeneralWeatherForecast != null) {
+                    var oldProperties = forecastFromJson.properties();
+                    var newProperties = updatedGeneralWeatherForecast.properties();
+                    if (oldProperties.weatherNeedsUpdate(newProperties)) {
+                        var combinedProperties = oldProperties.updateWeather(newProperties, true);
+                        this.generalWeatherForecast = new WeatherForecast(combinedProperties);
+                        this.generalWeatherForecastJson = objectMapper.writeValueAsString(this.generalWeatherForecast);
+                    }
+                }
+
+                if(this.generalWeatherForecast == null) {
+                    // The first time the app loads the general forecast will be null so if this
+                    // happens, like in a restart, load the json back into the object for the front
+                    // end.
+                    this.generalWeatherForecast = forecastFromJson;
                 }
             } else {
-                log.info("No weather forecast json found so just setting it new.");
-                this.generalWeatherForecast = generalWeatherForecast;
-                this.generalWeatherForecastJson = objectMapper.writeValueAsString(generalWeatherForecast);
+                log.info("No general weather forecast json found so just setting it new.");
+                if(updatedGeneralWeatherForecast != null) {
+                    this.generalWeatherForecast = updatedGeneralWeatherForecast;
+                    this.generalWeatherForecastJson = objectMapper.writeValueAsString(updatedGeneralWeatherForecast);
+                }
             }
-        }
+    }
 
-        if(hourlyWeatherForecast != null) {
+    @SneakyThrows
+    public void updateHourlyWeatherForecasts(WeatherForecast updatedHourlyWeatherForecast, ObjectMapper objectMapper) {
             if (StringUtils.hasText(this.hourlyWeatherForecastJson)) {
                 var forecastFromJson = objectMapper.readValue(this.hourlyWeatherForecastJson, WeatherForecast.class);
-                var oldProperties = forecastFromJson.properties();
-                var newProperties = hourlyWeatherForecast.properties();
-                if (oldProperties.weatherNeedsUpdate(newProperties)) {
-                    var combinedProperties = oldProperties.updateWeather(newProperties);
-                    this.hourlyWeatherForecast = new WeatherForecast(combinedProperties);
-                    hourlyWeatherForecastJson = objectMapper.writeValueAsString(hourlyWeatherForecast);
+
+                if(updatedHourlyWeatherForecast != null) {
+                    var oldProperties = forecastFromJson.properties();
+                    var newProperties = updatedHourlyWeatherForecast.properties();
+                    if (oldProperties.weatherNeedsUpdate(newProperties)) {
+                        var combinedProperties = oldProperties.updateWeather(newProperties, false);
+                        this.hourlyWeatherForecast = new WeatherForecast(combinedProperties);
+                        hourlyWeatherForecastJson = objectMapper.writeValueAsString(this.hourlyWeatherForecast);
+                    }
+                }
+
+                if(this.hourlyWeatherForecast == null) {
+                    // The first time the app loads the general forecast will be null so if this
+                    // happens, like in a restart, load the json back into the object for the front
+                    // end.
+                    this.hourlyWeatherForecast = forecastFromJson;
                 }
             } else {
-                log.info("No weather forecast json found so just setting it new.");
-                this.hourlyWeatherForecast = hourlyWeatherForecast;
-                this.hourlyWeatherForecastJson = objectMapper.writeValueAsString(hourlyWeatherForecast);
+                log.info("No hourly weather forecast json found so just setting it new.");
+                if(updatedHourlyWeatherForecast != null) {
+                    this.hourlyWeatherForecast = updatedHourlyWeatherForecast;
+                    this.hourlyWeatherForecastJson = objectMapper.writeValueAsString(updatedHourlyWeatherForecast);
+                }
             }
-        }
     }
 
     @Override

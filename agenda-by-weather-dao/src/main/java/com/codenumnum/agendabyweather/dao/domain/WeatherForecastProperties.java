@@ -3,6 +3,7 @@ package com.codenumnum.agendabyweather.dao.domain;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 public record WeatherForecastProperties(String units, String generatedAt, String updateTime,
@@ -13,7 +14,7 @@ public record WeatherForecastProperties(String units, String generatedAt, String
                 !updatedProperties.updateTime().equals(this.updateTime);
     }
 
-    public WeatherForecastProperties updateWeather(WeatherForecastProperties updatedProperties) {
+    public WeatherForecastProperties updateWeather(WeatherForecastProperties updatedProperties, boolean archive) {
         WeatherForecastPeriod updatedPeriod = updatedProperties.periods.get(0);
         String date2WeekAgo = subtractTwoWeeksAndFormat(updatedPeriod.startTime());
         int period2WeekAgoStartIndex = 0;
@@ -38,6 +39,9 @@ public record WeatherForecastProperties(String units, String generatedAt, String
         }
 
         List<WeatherForecastPeriod> updatedPeriods = this.periods.subList(period2WeekAgoStartIndex, updatedPeriodStartIndex);
+        if(archive) {
+            updatedPeriods = updatedPeriods.stream().map(WeatherForecastPeriod::archivePeriod).collect(Collectors.toList());
+        }
         updatedPeriods.addAll(updatedProperties.periods);
 
         return new WeatherForecastProperties(updatedProperties.units, updatedProperties.generatedAt, updatedProperties.updateTime, updatedPeriods);

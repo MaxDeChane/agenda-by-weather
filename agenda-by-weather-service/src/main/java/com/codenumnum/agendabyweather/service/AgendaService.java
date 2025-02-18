@@ -38,8 +38,8 @@ public class AgendaService {
             log.info("Found default agenda. Update weather.");
             defaultAgenda = agendaOptional.get();
             try {
-                defaultAgenda.updateWeatherForecasts(weatherService.retrieveWeatherForecast(defaultAgenda.getGeneralWeatherForecastUrl()),
-                        weatherService.retrieveWeatherForecast(defaultAgenda.getHourlyWeatherForecastUrl()), objectMapper);
+                defaultAgenda.updateGeneralWeatherForecast(weatherService.retrieveWeatherForecast(defaultAgenda.getGeneralWeatherForecastUrl()), objectMapper);
+                defaultAgenda.updateHourlyWeatherForecasts(weatherService.retrieveWeatherForecast(defaultAgenda.getHourlyWeatherForecastUrl()), objectMapper);
             } catch (Exception e) {
                 // Just catch but still return the agenda so the info there can be used.
                 log.error("Error retrieving weather forecast. Just returning the agenda", e);
