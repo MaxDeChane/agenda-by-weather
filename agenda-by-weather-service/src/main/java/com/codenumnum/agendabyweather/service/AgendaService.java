@@ -1,11 +1,18 @@
 package com.codenumnum.agendabyweather.service;
 
+import com.codenumnum.agendabyweather.dao.domain.WeatherForecast;
+import com.codenumnum.agendabyweather.dao.domain.WeatherForecastPeriod;
+import com.codenumnum.agendabyweather.dao.domain.WeatherForecastProperties;
 import com.codenumnum.agendabyweather.dao.domain.WeatherUrls;
 import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
 import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
 import com.codenumnum.agendabyweather.dao.repository.AgendaItemRepository;
 import com.codenumnum.agendabyweather.dao.repository.AgendaRepository;
+import com.codenumnum.agendabyweather.service.domain.AgendaDayDto;
+import com.codenumnum.agendabyweather.service.domain.AgendaDto;
 import com.codenumnum.agendabyweather.service.domain.AgendaItemCrudStatusEnum;
+import com.codenumnum.agendabyweather.service.domain.factory.AgendaDayDtoFactory;
+import com.codenumnum.agendabyweather.service.domain.factory.AgendaDtoFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -16,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
-import java.util.HashSet;
+import java.util.*;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -26,20 +33,32 @@ import java.util.HashSet;
 public class AgendaService {
 
     AgendaRepository agendaRepository;
+    AgendaDtoFactory agendaDtoFactory;
+    AgendaDayDtoFactory agendaDayDtoFactory;
     AgendaItemRepository agendaItemRepository;
     WeatherService weatherService;
     ObjectMapper objectMapper;
 
-    public Agenda retrieveDefaultAgendaCreatingIfNotPresent() {
+    public AgendaDto retrieveDefaultAgendaCreatingIfNotPresent(Optional<WeatherUrls> weatherUrlsOptional) {
         var agendaOptional = agendaRepository.findByDefaultAgenda(true);
 
-        Agenda defaultAgenda;
+        AgendaDto defaultAgendaDto;
         if (agendaOptional.isPresent()) {
             log.info("Found default agenda. Update weather.");
-            defaultAgenda = agendaOptional.get();
+            defaultAgendaDto = agendaDtoFactory.createFromExistingAgenda(agendaOptional.get(), objectMapper);
             try {
-                defaultAgenda.updateGeneralWeatherForecast(weatherService.retrieveWeatherForecast(defaultAgenda.getGeneralWeatherForecastUrl()), objectMapper);
-                defaultAgenda.updateHourlyWeatherForecasts(weatherService.retrieveWeatherForecast(defaultAgenda.getHourlyWeatherForecastUrl()), objectMapper);
+                String generalWeatherUrl;
+                String hourlyWeatherUrl;
+                if(weatherUrlsOptional.isPresent()) {
+                    generalWeatherUrl = weatherUrlsOptional.get().getForecastUrl();
+                    hourlyWeatherUrl = weatherUrlsOptional.get().getForecastHourlyUrl();
+                } else {
+                    generalWeatherUrl = defaultAgendaDto.getGeneralWeatherForecastUrl();
+                    hourlyWeatherUrl = defaultAgendaDto.getHourlyWeatherForecastUrl();
+                }
+
+                updateWeatherOnAgenda(defaultAgendaDto, weatherService.retrieveWeatherForecast(generalWeatherUrl), true);
+                updateWeatherOnAgenda(defaultAgendaDto, weatherService.retrieveWeatherForecast(hourlyWeatherUrl), false);
             } catch (Exception e) {
                 // Just catch but still return the agenda so the info there can be used.
                 log.error("Error retrieving weather forecast. Just returning the agenda", e);
@@ -48,21 +67,78 @@ public class AgendaService {
             log.info("Default agenda not found so creating new one");
             // Initial will have a value of empty so the front end knows to get
             // the info from the user.
-            defaultAgenda = Agenda.builder().defaultAgenda(true).build();
+            defaultAgendaDto = new AgendaDto(Agenda.builder().defaultAgenda(true).build(), Collections.emptyMap());
         }
 
+        agendaRepository.save(defaultAgendaDto.agenda());
 
-        return agendaRepository.save(defaultAgenda);
+        return defaultAgendaDto;
     }
 
-    public Agenda updateAgendaWeatherBaseInfo(String latLon) {
-        WeatherUrls weatherUrls = weatherService.retrieveWeatherUrls(latLon);
-        Agenda defaultAgenda = retrieveDefaultAgendaCreatingIfNotPresent();
-        defaultAgenda.setLatLon(latLon);
-        defaultAgenda.setGeneralWeatherForecastUrl(weatherUrls.getForecastUrl());
-        defaultAgenda.setHourlyWeatherForecastUrl(weatherUrls.getForecastHourlyUrl());
+    /**
+     * This method doesn't save the agenda to the db since other operations may be needed
+     * also. Instead, that will be left up to the calling methods to decide if and when
+     * changes need to be saved to the backing Agenda.
+     *
+     * @param agendaDto
+     * @param weatherForecast
+     * @param isGeneralForecast
+     */
+    public void updateWeatherOnAgenda(AgendaDto agendaDto, WeatherForecast weatherForecast, boolean isGeneralForecast) {
+        WeatherForecastProperties weatherForecastProperties = weatherForecast.properties();
+        String generatedAt;
+        String updatedAt;
 
-        return agendaRepository.save(defaultAgenda);
+        if(isGeneralForecast) {
+            generatedAt = agendaDto.getGeneralWeatherGeneratedAt();
+            updatedAt = agendaDto.getGeneralWeatherUpdateTime();
+        } else {
+            generatedAt = agendaDto.getHourlyWeatherGeneratedAt();
+            updatedAt = agendaDto.getHourlyWeatherUpdateTime();
+        }
+
+        if(generatedAt != null && updatedAt != null &&
+                generatedAt.equals(weatherForecastProperties.generatedAt()) &&
+                updatedAt.equals(weatherForecastProperties.updateTime())) {
+            log.info("No update for weather needed.");
+            return;
+        }
+
+        Map<String, Map<String, WeatherForecastPeriod>> periodsByDateString = weatherService.mapWeatherPeriodsByDay(weatherForecastProperties.periods());
+        for(Map.Entry<String, Map<String, WeatherForecastPeriod>> entry : periodsByDateString.entrySet()) {
+            AgendaDayDto agendaDayDto = agendaDto.agendaDaysByDateString().get(entry.getKey());
+            if(agendaDayDto == null) {
+                agendaDayDto = agendaDayDtoFactory.createNewWithWeatherForecast(agendaDto.getId(), entry.getKey(), entry.getValue(), isGeneralForecast, objectMapper);
+            } else {
+                agendaDayDto = agendaDayDto.updateForecast(entry.getValue(), isGeneralForecast, objectMapper);
+            }
+
+            // Update/Add the day to the backing agenda days collection to be saved to the
+            // database.
+            agendaDto.getAgendaDays().add(agendaDayDto.agendaDay());
+            // Add to map for easy look up and retrieval.
+            agendaDto.agendaDaysByDateString().put(entry.getKey(), agendaDayDto);
+        }
+
+        if(isGeneralForecast) {
+            agendaDto.setGeneralWeatherGeneratedAt(weatherForecastProperties.generatedAt());
+            agendaDto.setGeneralWeatherUpdateTime(weatherForecastProperties.updateTime());
+        } else {
+            agendaDto.setHourlyWeatherGeneratedAt(weatherForecastProperties.generatedAt());
+            agendaDto.setHourlyWeatherUpdateTime(weatherForecastProperties.updateTime());
+        }
+    }
+
+    public AgendaDto updateAgendaWeatherBaseInfo(String latLon) {
+        WeatherUrls weatherUrls = weatherService.retrieveWeatherUrls(latLon);
+        AgendaDto defaultAgendaDto = retrieveDefaultAgendaCreatingIfNotPresent(Optional.of(weatherUrls));
+        defaultAgendaDto.setLatLon(latLon);
+        defaultAgendaDto.setGeneralWeatherForecastUrl(weatherUrls.getForecastUrl());
+        defaultAgendaDto.setHourlyWeatherForecastUrl(weatherUrls.getForecastHourlyUrl());
+
+        agendaRepository.save(defaultAgendaDto.agenda());
+
+        return defaultAgendaDto;
     }
 
     public AgendaItemCrudStatusEnum addNewAgendaItem(String latLon, AgendaItem agendaItem) {
@@ -78,7 +154,7 @@ public class AgendaService {
         var agendaItems = agenda.getAgendaItems();
 
         if(agendaItems == null) {
-            agendaItems = new HashSet<>();
+            agendaItems = new ArrayList<>();
         } else if(agendaItems.contains(agendaItem)) {
             return AgendaItemCrudStatusEnum.ALREADY_EXISTS;
         }

@@ -9,11 +9,6 @@ import java.util.stream.Collectors;
 public record WeatherForecastProperties(String units, String generatedAt, String updateTime,
                                         List<WeatherForecastPeriod> periods) {
 
-    public boolean weatherNeedsUpdate(WeatherForecastProperties updatedProperties) {
-        return !updatedProperties.generatedAt().equals(this.generatedAt) ||
-                !updatedProperties.updateTime().equals(this.updateTime);
-    }
-
     public WeatherForecastProperties updateWeather(WeatherForecastProperties updatedProperties, boolean archive) {
         WeatherForecastPeriod updatedPeriod = updatedProperties.periods.get(0);
         String date2WeekAgo = subtractTwoWeeksAndFormat(updatedPeriod.startTime());

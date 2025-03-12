@@ -4,12 +4,16 @@ import com.codenumnum.agendabyweather.dao.GeocodingApiDao;
 import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
 import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
 import com.codenumnum.agendabyweather.service.AgendaService;
+import com.codenumnum.agendabyweather.service.domain.AgendaDayDto;
+import com.codenumnum.agendabyweather.service.domain.AgendaDto;
 import com.codenumnum.agendabyweather.service.domain.AgendaItemCrudStatusEnum;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -22,12 +26,12 @@ public class AgendaWeatherController {
     GeocodingApiDao geocodingApiDao;
 
     @GetMapping
-    public Agenda getDefaultAgendaWeather() {
-        return agendaService.retrieveDefaultAgendaCreatingIfNotPresent();
+    public AgendaDto getDefaultAgendaWeather() {
+        return agendaService.retrieveDefaultAgendaCreatingIfNotPresent(Optional.empty());
     }
 
     @PutMapping("/{address}")
-    public Agenda updateLatLonOnDefaultAgenda(@PathVariable String address) {
+    public AgendaDto updateLatLonOnDefaultAgenda(@PathVariable String address) {
         String latLon = geocodingApiDao.retrieveLatLonFromAddress(address);
 
         return agendaService.updateAgendaWeatherBaseInfo(latLon);

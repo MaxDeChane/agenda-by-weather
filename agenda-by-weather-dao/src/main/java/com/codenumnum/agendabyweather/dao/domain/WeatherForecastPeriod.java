@@ -16,4 +16,10 @@ public record WeatherForecastPeriod(int number, String name, String startTime, S
                     windSpeed, direction, shortForecast, longForecast);
         }
     }
+
+    public WeatherForecastPeriod updateEndDateTime(String updatedEndDateTime) {
+        return new WeatherForecastPeriod(number, name, startTime, updatedEndDateTime, isDaytime, temperature,
+                temperatureUnit, temperatureTrend, probabilityOfPrecipitation, dewpoint, relativeHumidity,
+                windSpeed, direction, shortForecast, longForecast);
+    }
 }
