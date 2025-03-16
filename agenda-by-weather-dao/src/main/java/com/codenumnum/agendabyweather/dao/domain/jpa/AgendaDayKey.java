@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.io.Serializable;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Data
@@ -14,7 +16,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Embeddable
-public class AgendaDayKey {
+public class AgendaDayKey implements Serializable {
+
     private UUID agendaId;
-    private String dayString;
+    private OffsetDateTime dayDate;
 }

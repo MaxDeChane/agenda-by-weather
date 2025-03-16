@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @Slf4j
@@ -37,6 +39,7 @@ public class AgendaService {
     AgendaDayDtoFactory agendaDayDtoFactory;
     AgendaItemRepository agendaItemRepository;
     WeatherService weatherService;
+    DateTimeService dateTimeService;
     ObjectMapper objectMapper;
 
     public AgendaDto retrieveDefaultAgendaCreatingIfNotPresent(Optional<WeatherUrls> weatherUrlsOptional) {
@@ -86,8 +89,8 @@ public class AgendaService {
      */
     public void updateWeatherOnAgenda(AgendaDto agendaDto, WeatherForecast weatherForecast, boolean isGeneralForecast) {
         WeatherForecastProperties weatherForecastProperties = weatherForecast.properties();
-        String generatedAt;
-        String updatedAt;
+        OffsetDateTime generatedAt;
+        OffsetDateTime updatedAt;
 
         if(isGeneralForecast) {
             generatedAt = agendaDto.getGeneralWeatherGeneratedAt();
@@ -97,18 +100,25 @@ public class AgendaService {
             updatedAt = agendaDto.getHourlyWeatherUpdateTime();
         }
 
-        if(generatedAt != null && updatedAt != null &&
-                generatedAt.equals(weatherForecastProperties.generatedAt()) &&
-                updatedAt.equals(weatherForecastProperties.updateTime())) {
-            log.info("No update for weather needed.");
-            return;
-        }
+//        if(generatedAt != null && updatedAt != null &&
+//                generatedAt.equals(weatherForecastProperties.generatedAt()) &&
+//                updatedAt.equals(weatherForecastProperties.updateTime())) {
+//            log.info("No update for weather needed.");
+//            return;
+//        }
 
-        Map<String, Map<String, WeatherForecastPeriod>> periodsByDateString = weatherService.mapWeatherPeriodsByDay(weatherForecastProperties.periods());
-        for(Map.Entry<String, Map<String, WeatherForecastPeriod>> entry : periodsByDateString.entrySet()) {
-            AgendaDayDto agendaDayDto = agendaDto.agendaDaysByDateString().get(entry.getKey());
+        Map<LocalDate, Map<OffsetDateTime, WeatherForecastPeriod>> updatedWeatherPeriodsByDay = weatherService.mapWeatherPeriodsByDay(weatherForecastProperties.periods());
+
+        LocalDate firstUpdatedDay = null;
+        for(Map.Entry<LocalDate, Map<OffsetDateTime, WeatherForecastPeriod>> entry : updatedWeatherPeriodsByDay.entrySet()) {
+            // Get the first
+            if(firstUpdatedDay == null || entry.getKey().isBefore(firstUpdatedDay)) {
+                firstUpdatedDay = entry.getKey();
+            }
+
+            AgendaDayDto agendaDayDto = agendaDto.agendaDaysByDay().get(entry.getKey());
             if(agendaDayDto == null) {
-                agendaDayDto = agendaDayDtoFactory.createNewWithWeatherForecast(agendaDto.getId(), entry.getKey(), entry.getValue(), isGeneralForecast, objectMapper);
+                agendaDayDto = agendaDayDtoFactory.createNewWithWeatherForecast(agendaDto.agenda(), entry.getKey(), entry.getValue(), isGeneralForecast, objectMapper);
             } else {
                 agendaDayDto = agendaDayDto.updateForecast(entry.getValue(), isGeneralForecast, objectMapper);
             }
@@ -117,13 +127,19 @@ public class AgendaService {
             // database.
             agendaDto.getAgendaDays().add(agendaDayDto.agendaDay());
             // Add to map for easy look up and retrieval.
-            agendaDto.agendaDaysByDateString().put(entry.getKey(), agendaDayDto);
+            agendaDto.agendaDaysByDay().put(entry.getKey(), agendaDayDto);
         }
 
         if(isGeneralForecast) {
+            agendaDto.runArchivalProcess(firstUpdatedDay, objectMapper);
+
+            // Update this as the last thing so if something fails before here it will be
+            // tried again.
             agendaDto.setGeneralWeatherGeneratedAt(weatherForecastProperties.generatedAt());
             agendaDto.setGeneralWeatherUpdateTime(weatherForecastProperties.updateTime());
         } else {
+            // Update this as the last thing so if something fails before here it will be
+            // tried again.
             agendaDto.setHourlyWeatherGeneratedAt(weatherForecastProperties.generatedAt());
             agendaDto.setHourlyWeatherUpdateTime(weatherForecastProperties.updateTime());
         }

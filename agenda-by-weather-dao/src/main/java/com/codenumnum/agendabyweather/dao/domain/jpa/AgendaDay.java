@@ -18,7 +18,8 @@ import java.util.Objects;
 public class AgendaDay {
 
     @EmbeddedId
-    AgendaDayKey id;
+    AgendaDayKey agendaDayKey;
+
     @Lob
     String hourlyWeatherForecastJson;
     @Lob
@@ -27,11 +28,11 @@ public class AgendaDay {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof AgendaDay agendaDay)) return false;
-        return Objects.equals(id, agendaDay.id);
+        return Objects.equals(agendaDayKey, agendaDay.agendaDayKey);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id);
+        return Objects.hashCode(agendaDayKey);
     }
 }

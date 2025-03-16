@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
@@ -28,6 +29,7 @@ class AgendaServiceTest {
     private AgendaRepository agendaRepositoryMock;
     private AgendaItemRepository agendaItemRepositoryMock;
     private WeatherService weatherServiceMock;
+    private DateTimeService dateTimeServiceMock;
     private ObjectMapper objectMapperMock;
 
     private AgendaDto defaultAgendaDto;
@@ -44,14 +46,15 @@ class AgendaServiceTest {
         agendaRepositoryMock = Mockito.mock(AgendaRepository.class);
         agendaItemRepositoryMock = Mockito.mock(AgendaItemRepository.class);
         weatherServiceMock = Mockito.mock(WeatherService.class);
+        dateTimeServiceMock = Mockito.mock(DateTimeService.class);
         objectMapperMock = Mockito.mock(ObjectMapper.class);
 
-        classUnderTest = new AgendaService(agendaRepositoryMock, agendaDtoFactoryMock, agendaDayDtoFactoryMock, agendaItemRepositoryMock, weatherServiceMock, objectMapperMock);
+        classUnderTest = new AgendaService(agendaRepositoryMock, agendaDtoFactoryMock, agendaDayDtoFactoryMock, agendaItemRepositoryMock, weatherServiceMock, dateTimeServiceMock, objectMapperMock);
 
         agenda = Agenda.builder().id(AGENDA_ID).generalWeatherForecastUrl("generalWeatherUrl")
                 .hourlyWeatherForecastUrl("hourlyWeatherUrl")
-                .generalWeatherGeneratedAt("2025-03-10T10:00:00Z")
-                .generalWeatherUpdateTime("2025-03-10T10:00:00Z")
+                .generalWeatherGeneratedAt(OffsetDateTime.parse("2025-03-10T10:00:00Z"))
+                .generalWeatherUpdateTime(OffsetDateTime.parse("2025-03-10T10:00:00Z"))
                 .build();
         defaultAgendaDto = new AgendaDto(agenda, new HashMap<>());
 
@@ -86,7 +89,7 @@ class AgendaServiceTest {
         // Assert: Ensure new agenda is created
         Mockito.verify(agendaRepositoryMock).save(Mockito.any());
         Assertions.assertNotNull(result);
-        Assertions.assertTrue(result.agendaDaysByDateString().isEmpty());
+        Assertions.assertTrue(result.agendaDaysByDay().isEmpty());
     }
 
     @Test
@@ -122,6 +125,6 @@ class AgendaServiceTest {
 //        classUnderTest.updateWeatherOnAgenda(agendaDto, weatherForecast, true);
 //
 //        // Assert: Ensure weather update logic is called when times don't match
-//        Mockito.verify(agendaDto, Mockito.times(1)).agendaDaysByDateString();
+//        Mockito.verify(agendaDto, Mockito.times(1)).agendaDaysByDay();
 //    }
 }

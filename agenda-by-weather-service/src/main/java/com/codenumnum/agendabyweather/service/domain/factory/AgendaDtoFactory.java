@@ -11,6 +11,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,10 +27,10 @@ public class AgendaDtoFactory {
             return new AgendaDto(agenda, new HashMap<>());
         }
 
-        Map<String, AgendaDayDto> agendaDaysByDateString = new HashMap<>();
+        Map<LocalDate, AgendaDayDto> agendaDaysByDateString = new HashMap<>();
         for(AgendaDay agendaDay : agenda.getAgendaDays()) {
             AgendaDayDto agendaDayDto = agendaDayDtoFactory.createFromAgendaDay(agendaDay, objectMapper);
-            agendaDaysByDateString.put(agendaDayDto.getId().getDayString(), agendaDayDto);
+            agendaDaysByDateString.put(agendaDayDto.getAgendaDayKey().getDayDate().toLocalDate(), agendaDayDto);
         }
 
         return new AgendaDto(agenda, agendaDaysByDateString);

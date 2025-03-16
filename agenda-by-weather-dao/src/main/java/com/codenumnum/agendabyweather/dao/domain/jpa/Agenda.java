@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.log4j.Log4j2;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @Log4j2
@@ -25,14 +26,17 @@ public class Agenda {
     @Column(nullable = false)
     boolean defaultAgenda;
     String hourlyWeatherForecastUrl;
-    String hourlyWeatherGeneratedAt;
-    String hourlyWeatherUpdateTime;
+    OffsetDateTime hourlyWeatherGeneratedAt;
+    OffsetDateTime hourlyWeatherUpdateTime;
     String generalWeatherForecastUrl;
-    String generalWeatherGeneratedAt;
-    String generalWeatherUpdateTime;
+    OffsetDateTime generalWeatherGeneratedAt;
+    OffsetDateTime generalWeatherUpdateTime;
+
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @Builder.Default
     List<AgendaItem> agendaItems = new ArrayList<>();
+
+    @JoinColumn(name = "agendaId")
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     Set<AgendaDay> agendaDays = new HashSet<>();

@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -27,20 +29,20 @@ public class WeatherService {
         return weatherApiDao.retrieveWeatherForecast(weatherUrl);
     }
 
-    public Map<String, Map<String, WeatherForecastPeriod>> mapWeatherPeriodsByDay(List<WeatherForecastPeriod> weatherForecastPeriods) {
-        String currentDayDate = null;
-        Map<String, WeatherForecastPeriod> currentDayPeriodsByDateTimeString = null;
-        Map<String, Map<String, WeatherForecastPeriod>> periodsByDay = new HashMap<>();
+    public Map<LocalDate, Map<OffsetDateTime, WeatherForecastPeriod>> mapWeatherPeriodsByDay(List<WeatherForecastPeriod> weatherForecastPeriods) {
+        LocalDate currentDayDate = null;
+        Map<OffsetDateTime, WeatherForecastPeriod> currentDayPeriodsByDateTime = null;
+        Map<LocalDate, Map<OffsetDateTime, WeatherForecastPeriod>> periodsByDay = new HashMap<>();
         for(WeatherForecastPeriod weatherForecastPeriod : weatherForecastPeriods) {
-            String nextDayDate = dateTimeService.retrieveDayPartFromUtcDateTime(weatherForecastPeriod.startTime());
+            LocalDate nextDayDate = weatherForecastPeriod.startTime().toLocalDate();
 
             if(!nextDayDate.equals(currentDayDate)) {
                 currentDayDate = nextDayDate;
-                currentDayPeriodsByDateTimeString = new HashMap<>();
-                periodsByDay.put(currentDayDate, currentDayPeriodsByDateTimeString);
+                currentDayPeriodsByDateTime = new HashMap<>();
+                periodsByDay.put(currentDayDate, currentDayPeriodsByDateTime);
             }
 
-            currentDayPeriodsByDateTimeString.put(weatherForecastPeriod.startTime(), weatherForecastPeriod);
+            currentDayPeriodsByDateTime.put(weatherForecastPeriod.startTime(), weatherForecastPeriod);
         }
 
         return periodsByDay;

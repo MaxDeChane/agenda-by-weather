@@ -7,12 +7,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 class WeatherServiceTest {
+
+    private final LocalDate dateDay10 = LocalDate.parse("2025-03-10");
+    private final LocalDate dateDay11 = LocalDate.parse("2025-03-11");
+
+    private final OffsetDateTime _2025_03_10T10_00_00Z = OffsetDateTime.parse("2025-03-10T10:00:00Z");
+    private final OffsetDateTime _2025_03_10T14_00_00Z = OffsetDateTime.parse("2025-03-10T14:00:00Z");
+    private final OffsetDateTime _2025_03_11T10_00_00Z = OffsetDateTime.parse("2025-03-11T10:00:00Z");
+    private final OffsetDateTime _2025_03_11T15_00_00Z = OffsetDateTime.parse("2025-03-11T15:00:00Z");
 
     private WeatherService classUnderTest;
 
@@ -30,16 +40,10 @@ class WeatherServiceTest {
         forecastPeriod3 = Mockito.mock(WeatherForecastPeriod.class);
         forecastPeriod4 = Mockito.mock(WeatherForecastPeriod.class);
 
-        Mockito.when(forecastPeriod1.startTime()).thenReturn("2025-03-10T10:00:00Z");
-        Mockito.when(forecastPeriod2.startTime()).thenReturn("2025-03-10T14:00:00Z");
-        Mockito.when(forecastPeriod3.startTime()).thenReturn("2025-03-11T10:00:00Z");
-        Mockito.when(forecastPeriod4.startTime()).thenReturn("2025-03-11T15:00:00Z");
-
-        // Setup mock DateTimeService to return day part of date
-        Mockito.when(dateTimeServiceMock.retrieveDayPartFromUtcDateTime("2025-03-10T10:00:00Z")).thenReturn("2025-03-10");
-        Mockito.when(dateTimeServiceMock.retrieveDayPartFromUtcDateTime("2025-03-10T14:00:00Z")).thenReturn("2025-03-10");
-        Mockito.when(dateTimeServiceMock.retrieveDayPartFromUtcDateTime("2025-03-11T10:00:00Z")).thenReturn("2025-03-11");
-        Mockito.when(dateTimeServiceMock.retrieveDayPartFromUtcDateTime("2025-03-11T15:00:00Z")).thenReturn("2025-03-11");
+        Mockito.when(forecastPeriod1.startTime()).thenReturn(_2025_03_10T10_00_00Z);
+        Mockito.when(forecastPeriod2.startTime()).thenReturn(_2025_03_10T14_00_00Z);
+        Mockito.when(forecastPeriod3.startTime()).thenReturn(_2025_03_11T10_00_00Z);
+        Mockito.when(forecastPeriod4.startTime()).thenReturn(_2025_03_11T15_00_00Z);
     }
 
     @Test
@@ -48,24 +52,24 @@ class WeatherServiceTest {
         List<WeatherForecastPeriod> weatherForecastPeriods = Arrays.asList(forecastPeriod1, forecastPeriod2, forecastPeriod3, forecastPeriod4);
 
         // Act: Call the method to map weather periods by day
-        Map<String, Map<String, WeatherForecastPeriod>> result = classUnderTest.mapWeatherPeriodsByDay(weatherForecastPeriods);
+        Map<LocalDate, Map<OffsetDateTime, WeatherForecastPeriod>> result = classUnderTest.mapWeatherPeriodsByDay(weatherForecastPeriods);
 
         // Assert: Verify that periods are grouped by day
         Assertions.assertEquals(2, result.size());  // Should have two days
-        Assertions.assertTrue(result.containsKey("2025-03-10"));
-        Assertions.assertTrue(result.containsKey("2025-03-11"));
+        Assertions.assertTrue(result.containsKey(dateDay10));
+        Assertions.assertTrue(result.containsKey(dateDay11));
 
-        Map<String, WeatherForecastPeriod> day10Periods = result.get("2025-03-10");
-        Map<String, WeatherForecastPeriod> day11Periods = result.get("2025-03-11");
+        Map<OffsetDateTime, WeatherForecastPeriod> day10Periods = result.get(dateDay10);
+        Map<OffsetDateTime, WeatherForecastPeriod> day11Periods = result.get(dateDay11);
 
         Assertions.assertEquals(2, day10Periods.size()); // Two periods on 2025-03-10
         Assertions.assertEquals(2, day11Periods.size()); // Two periods on 2025-03-11
 
         // Verify that the forecast periods are correctly assigned to the appropriate day
-        Assertions.assertTrue(day10Periods.containsKey("2025-03-10T10:00:00Z"));
-        Assertions.assertTrue(day10Periods.containsKey("2025-03-10T14:00:00Z"));
-        Assertions.assertTrue(day11Periods.containsKey("2025-03-11T10:00:00Z"));
-        Assertions.assertTrue(day11Periods.containsKey("2025-03-11T15:00:00Z"));
+        Assertions.assertTrue(day10Periods.containsKey(_2025_03_10T10_00_00Z));
+        Assertions.assertTrue(day10Periods.containsKey(_2025_03_10T14_00_00Z));
+        Assertions.assertTrue(day11Periods.containsKey(_2025_03_11T10_00_00Z));
+        Assertions.assertTrue(day11Periods.containsKey(_2025_03_11T15_00_00Z));
     }
 
     @Test
@@ -74,7 +78,7 @@ class WeatherServiceTest {
         List<WeatherForecastPeriod> weatherForecastPeriods = new ArrayList<>();
 
         // Act: Call the method with an empty list
-        Map<String, Map<String, WeatherForecastPeriod>> result = classUnderTest.mapWeatherPeriodsByDay(weatherForecastPeriods);
+        Map<LocalDate, Map<OffsetDateTime, WeatherForecastPeriod>> result = classUnderTest.mapWeatherPeriodsByDay(weatherForecastPeriods);
 
         // Assert: Ensure the result is an empty map
         Assertions.assertTrue(result.isEmpty());
@@ -86,12 +90,12 @@ class WeatherServiceTest {
         List<WeatherForecastPeriod> weatherForecastPeriods = Arrays.asList(forecastPeriod1, forecastPeriod2);
 
         // Act: Call the method
-        Map<String, Map<String, WeatherForecastPeriod>> result = classUnderTest.mapWeatherPeriodsByDay(weatherForecastPeriods);
+        Map<LocalDate, Map<OffsetDateTime, WeatherForecastPeriod>> result = classUnderTest.mapWeatherPeriodsByDay(weatherForecastPeriods);
 
         // Assertions.assert: Ensure that all periods are grouped under the same day
         Assertions.assertEquals(1, result.size());
-        Assertions.assertTrue(result.containsKey("2025-03-10"));
-        Assertions.assertEquals(2, result.get("2025-03-10").size());
+        Assertions.assertTrue(result.containsKey(dateDay10));
+        Assertions.assertEquals(2, result.get(dateDay10).size());
     }
 
     @Test
@@ -100,11 +104,11 @@ class WeatherServiceTest {
         List<WeatherForecastPeriod> weatherForecastPeriods = Arrays.asList(forecastPeriod1, forecastPeriod3);
 
         // Act: Call the method
-        Map<String, Map<String, WeatherForecastPeriod>> result = classUnderTest.mapWeatherPeriodsByDay(weatherForecastPeriods);
+        Map<LocalDate, Map<OffsetDateTime, WeatherForecastPeriod>> result = classUnderTest.mapWeatherPeriodsByDay(weatherForecastPeriods);
 
         // Assert: Ensure two separate days are created
         Assertions.assertEquals(2, result.size());
-        Assertions.assertTrue(result.containsKey("2025-03-10"));
-        Assertions.assertTrue(result.containsKey("2025-03-11"));
+        Assertions.assertTrue(result.containsKey(dateDay10));
+        Assertions.assertTrue(result.containsKey(dateDay11));
     }
 }

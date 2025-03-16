@@ -42,7 +42,7 @@ public class AgendaByWeatherAcceptanceTest {
     // Default testing agenda date which is an hour apart
     private static final OffsetDateTime START_DATE_TIME = OffsetDateTime.of(LocalDateTime.of(2025, 1, 5, 12, 0), ZoneOffset.ofHours(6));
     private static final OffsetDateTime END_DATE_TIME = OffsetDateTime.of(LocalDateTime.of(2025, 1, 5, 13, 0), ZoneOffset.ofHours(6));
-    private static final Operation DELETE_ALL = deleteAllFrom("AGENDA_AGENDA_ITEMS", "AGENDA", "AGENDA_ITEM");
+    private static final Operation DELETE_ALL = deleteAllFrom("AGENDA_AGENDA_ITEMS", "AGENDA_DAY", "AGENDA", "AGENDA_ITEM");
     private static ClientAndServer mockServer;
     @Autowired
     private WebTestClient webTestClient;
