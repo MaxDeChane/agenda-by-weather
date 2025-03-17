@@ -14,5 +14,5 @@ public interface AgendaRepository extends JpaRepository<Agenda, String> {
 
     Optional<Agenda> findByDefaultAgenda(boolean defaultAgenda);
 
-    Agenda findByLatLon(String latLon);
+    Optional<Agenda> findByLatLon(String latLon);
 }

@@ -11,8 +11,8 @@ import com.codenumnum.agendabyweather.dao.repository.AgendaRepository;
 import com.codenumnum.agendabyweather.service.domain.AgendaDayDto;
 import com.codenumnum.agendabyweather.service.domain.AgendaDto;
 import com.codenumnum.agendabyweather.service.domain.AgendaItemCrudStatusEnum;
-import com.codenumnum.agendabyweather.service.domain.factory.AgendaDayDtoFactory;
-import com.codenumnum.agendabyweather.service.domain.factory.AgendaDtoFactory;
+import com.codenumnum.agendabyweather.service.domain.factory.AgendaDayFactory;
+import com.codenumnum.agendabyweather.service.domain.factory.AgendaFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -25,7 +25,9 @@ import org.springframework.util.StringUtils;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -35,47 +37,31 @@ import java.util.*;
 public class AgendaService {
 
     AgendaRepository agendaRepository;
-    AgendaDtoFactory agendaDtoFactory;
-    AgendaDayDtoFactory agendaDayDtoFactory;
+    AgendaFactory agendaFactory;
+    AgendaDayFactory agendaDayFactory;
     AgendaItemRepository agendaItemRepository;
     WeatherService weatherService;
-    DateTimeService dateTimeService;
     ObjectMapper objectMapper;
 
-    public AgendaDto retrieveDefaultAgendaCreatingIfNotPresent(Optional<WeatherUrls> weatherUrlsOptional) {
-        var agendaOptional = agendaRepository.findByDefaultAgenda(true);
+    public Optional<AgendaDto> retrieveDefaultAgendaDto() {
+        Optional<Agenda> defaultAgendaOptional = agendaRepository.findByDefaultAgenda(true);
 
-        AgendaDto defaultAgendaDto;
-        if (agendaOptional.isPresent()) {
-            log.info("Found default agenda. Update weather.");
-            defaultAgendaDto = agendaDtoFactory.createFromExistingAgenda(agendaOptional.get(), objectMapper);
-            try {
-                String generalWeatherUrl;
-                String hourlyWeatherUrl;
-                if(weatherUrlsOptional.isPresent()) {
-                    generalWeatherUrl = weatherUrlsOptional.get().getForecastUrl();
-                    hourlyWeatherUrl = weatherUrlsOptional.get().getForecastHourlyUrl();
-                } else {
-                    generalWeatherUrl = defaultAgendaDto.getGeneralWeatherForecastUrl();
-                    hourlyWeatherUrl = defaultAgendaDto.getHourlyWeatherForecastUrl();
-                }
+        return defaultAgendaOptional.map(agendaFactory::createDtoFromExistingAgenda);
 
-                updateWeatherOnAgenda(defaultAgendaDto, weatherService.retrieveWeatherForecast(generalWeatherUrl), true);
-                updateWeatherOnAgenda(defaultAgendaDto, weatherService.retrieveWeatherForecast(hourlyWeatherUrl), false);
-            } catch (Exception e) {
-                // Just catch but still return the agenda so the info there can be used.
-                log.error("Error retrieving weather forecast. Just returning the agenda", e);
-            }
-        } else {
-            log.info("Default agenda not found so creating new one");
-            // Initial will have a value of empty so the front end knows to get
-            // the info from the user.
-            defaultAgendaDto = new AgendaDto(Agenda.builder().defaultAgenda(true).build(), Collections.emptyMap());
+    }
+
+    public AgendaDto updateGeneralAndHourlyForecastsForAgenda(AgendaDto agendaDto) {
+        try {
+            AgendaDto updatedAgendaDto = updateGeneralOrHourlyForecastForAgenda(agendaDto, weatherService.retrieveWeatherForecast(agendaDto.generalWeatherForecastUrl()), true);
+            updatedAgendaDto = updateGeneralOrHourlyForecastForAgenda(updatedAgendaDto, weatherService.retrieveWeatherForecast(agendaDto.hourlyWeatherForecastUrl()), false);
+
+            return updatedAgendaDto;
+        } catch (Exception e) {
+            // Just catch but still return the agenda so the info there can be used.
+            log.error("Error retrieving weather forecast. Just returning the agenda", e);
+
+            return agendaDto;
         }
-
-        agendaRepository.save(defaultAgendaDto.agenda());
-
-        return defaultAgendaDto;
     }
 
     /**
@@ -87,17 +73,17 @@ public class AgendaService {
      * @param weatherForecast
      * @param isGeneralForecast
      */
-    public void updateWeatherOnAgenda(AgendaDto agendaDto, WeatherForecast weatherForecast, boolean isGeneralForecast) {
+    public AgendaDto updateGeneralOrHourlyForecastForAgenda(AgendaDto agendaDto, WeatherForecast weatherForecast, boolean isGeneralForecast) {
         WeatherForecastProperties weatherForecastProperties = weatherForecast.properties();
         OffsetDateTime generatedAt;
         OffsetDateTime updatedAt;
 
         if(isGeneralForecast) {
-            generatedAt = agendaDto.getGeneralWeatherGeneratedAt();
-            updatedAt = agendaDto.getGeneralWeatherUpdateTime();
+            generatedAt = agendaDto.generalWeatherGeneratedAt();
+            updatedAt = agendaDto.generalWeatherUpdateTime();
         } else {
-            generatedAt = agendaDto.getHourlyWeatherGeneratedAt();
-            updatedAt = agendaDto.getHourlyWeatherUpdateTime();
+            generatedAt = agendaDto.hourlyWeatherGeneratedAt();
+            updatedAt = agendaDto.hourlyWeatherUpdateTime();
         }
 
 //        if(generatedAt != null && updatedAt != null &&
@@ -118,50 +104,81 @@ public class AgendaService {
 
             AgendaDayDto agendaDayDto = agendaDto.agendaDaysByDay().get(entry.getKey());
             if(agendaDayDto == null) {
-                agendaDayDto = agendaDayDtoFactory.createNewWithWeatherForecast(agendaDto.agenda(), entry.getKey(), entry.getValue(), isGeneralForecast, objectMapper);
+                agendaDayDto = agendaDayFactory.createNewDtoWithWeatherForecast(entry.getKey(), entry.getValue(), isGeneralForecast);
             } else {
-                agendaDayDto = agendaDayDto.updateForecast(entry.getValue(), isGeneralForecast, objectMapper);
+                agendaDayDto = agendaDayDto.updateForecast(entry.getValue(), isGeneralForecast);
             }
 
-            // Update/Add the day to the backing agenda days collection to be saved to the
-            // database.
-            agendaDto.getAgendaDays().add(agendaDayDto.agendaDay());
             // Add to map for easy look up and retrieval.
             agendaDto.agendaDaysByDay().put(entry.getKey(), agendaDayDto);
         }
 
         if(isGeneralForecast) {
             agendaDto.runArchivalProcess(firstUpdatedDay, objectMapper);
+        }
 
-            // Update this as the last thing so if something fails before here it will be
-            // tried again.
-            agendaDto.setGeneralWeatherGeneratedAt(weatherForecastProperties.generatedAt());
-            agendaDto.setGeneralWeatherUpdateTime(weatherForecastProperties.updateTime());
-        } else {
-            // Update this as the last thing so if something fails before here it will be
-            // tried again.
-            agendaDto.setHourlyWeatherGeneratedAt(weatherForecastProperties.generatedAt());
-            agendaDto.setHourlyWeatherUpdateTime(weatherForecastProperties.updateTime());
+        return agendaFactory.createDtoFromDtoWithGeneratedAndUpdatedWeatherTimestamps(agendaDto, generatedAt, updatedAt,
+                weatherForecastProperties.generatedAt().getOffset(), isGeneralForecast);
+    }
+
+    public AgendaDto retrieveNewAgendaDtoForLatLon(String latLon, boolean isDefaultAgendaDto) {
+        WeatherUrls weatherUrls = weatherService.retrieveWeatherUrls(latLon);
+
+        return new AgendaDto(latLon, isDefaultAgendaDto, null, weatherUrls.getForecastHourlyUrl(), null, null,
+                weatherUrls.getForecastUrl(), null, null, new ArrayList<>(), new HashMap<>());
+    }
+
+    public boolean saveNewAgendaFromDto(AgendaDto agendaDto) {
+        Agenda newAgendaEntity = agendaFactory.createNewEntityFromDto(agendaDto);
+
+        try {
+            agendaRepository.save(newAgendaEntity);
+            return true;
+        } catch (Exception e) {
+            // TODO add retry logic when time permits.
+            log.error("Error saving new agenda.", e);
+            return false;
         }
     }
 
-    public AgendaDto updateAgendaWeatherBaseInfo(String latLon) {
-        WeatherUrls weatherUrls = weatherService.retrieveWeatherUrls(latLon);
-        AgendaDto defaultAgendaDto = retrieveDefaultAgendaCreatingIfNotPresent(Optional.of(weatherUrls));
-        defaultAgendaDto.setLatLon(latLon);
-        defaultAgendaDto.setGeneralWeatherForecastUrl(weatherUrls.getForecastUrl());
-        defaultAgendaDto.setHourlyWeatherForecastUrl(weatherUrls.getForecastHourlyUrl());
+    public boolean updateAgendaEntityFromDto(AgendaDto agendaDto) {
+        Optional<Agenda> agendaOptional = agendaRepository.findByLatLon(agendaDto.latLon());
 
-        agendaRepository.save(defaultAgendaDto.agenda());
+        if(agendaOptional.isEmpty()) {
+            log.error("Agenda with lat/lon not found when should exist");
+            return false;
+        }
 
-        return defaultAgendaDto;
+        Agenda agenda = agendaOptional.get();
+
+        agenda.setGeneralWeatherGeneratedAt(agendaDto.generalWeatherGeneratedAt());
+        agenda.setGeneralWeatherUpdateTime(agendaDto.generalWeatherUpdateTime());
+        agenda.setHourlyWeatherGeneratedAt(agendaDto.hourlyWeatherGeneratedAt());
+        agenda.setHourlyWeatherUpdateTime(agendaDto.hourlyWeatherUpdateTime());
+
+        agenda.getAgendaItems().addAll(agendaDto.agendaItems());
+
+        agenda.getAgendaDays().addAll(agendaDto.agendaDaysByDay().values().stream()
+                .map(agendaDayDto -> agendaDayFactory.createEntityFromDto(agendaDayDto, agendaDto.offset(), agenda.getId()))
+                .collect(Collectors.toSet()));
+
+        try {
+            agendaRepository.save(agenda);
+            return true;
+        } catch (Exception e) {
+            // TODO add retry logic when time permits.
+            log.error("Error saving new agenda.", e);
+            return false;
+        }
     }
 
     public AgendaItemCrudStatusEnum addNewAgendaItem(String latLon, AgendaItem agendaItem) {
-        Agenda agenda = agendaRepository.findByLatLon(latLon);
-        if(agenda == null) {
+        Optional<Agenda> agendaOptional = agendaRepository.findByLatLon(latLon);
+        if(agendaOptional.isEmpty()) {
             return AgendaItemCrudStatusEnum.NO_AGENDA_WITH_LAT_LON;
         }
+
+        Agenda agenda = agendaOptional.get();
 
         if(!StringUtils.hasText(agendaItem.getName())) {
             agendaItem.setName("Untitled_" + Instant.now());
@@ -170,7 +187,7 @@ public class AgendaService {
         var agendaItems = agenda.getAgendaItems();
 
         if(agendaItems == null) {
-            agendaItems = new ArrayList<>();
+            agendaItems = new HashSet<>();
         } else if(agendaItems.contains(agendaItem)) {
             return AgendaItemCrudStatusEnum.ALREADY_EXISTS;
         }

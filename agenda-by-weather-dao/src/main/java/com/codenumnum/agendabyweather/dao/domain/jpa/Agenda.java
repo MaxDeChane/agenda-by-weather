@@ -34,7 +34,7 @@ public class Agenda {
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @Builder.Default
-    List<AgendaItem> agendaItems = new ArrayList<>();
+    Set<AgendaItem> agendaItems = new HashSet<>();
 
     @JoinColumn(name = "agendaId")
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)

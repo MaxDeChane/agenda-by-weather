@@ -1,37 +1,34 @@
 package com.codenumnum.agendabyweather.service.domain;
 
 import com.codenumnum.agendabyweather.dao.domain.WeatherForecastPeriod;
-import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
 import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaDay;
 import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaDayKey;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
-import lombok.experimental.Delegate;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public record AgendaDayDto(
-        @Delegate @JsonIgnore AgendaDay agendaDay,
+        LocalDate dayDate,
         Map<OffsetDateTime, WeatherForecastPeriod> generalWeatherPeriods,
         Map<OffsetDateTime, WeatherForecastPeriod> hourlyWeatherPeriods) {
 
     @SneakyThrows
-    public AgendaDayDto updateForecast(Map<OffsetDateTime, WeatherForecastPeriod> updatedPeriodsByStartTime, boolean isGeneralForecast,
-                                       ObjectMapper objectMapper) {
+    public AgendaDayDto updateForecast(Map<OffsetDateTime, WeatherForecastPeriod> updatedPeriodsByStartTime, boolean isGeneralForecast) {
         Map<OffsetDateTime, WeatherForecastPeriod> currentForecastPeriods = (isGeneralForecast) ? this.generalWeatherPeriods : this.hourlyWeatherPeriods;
 
         if(CollectionUtils.isEmpty(currentForecastPeriods)) {
-            String forecastPeriodsByStartTimeJson = objectMapper.writeValueAsString(updatedPeriodsByStartTime);
+            LocalDate dayDateOfPeriods = updatedPeriodsByStartTime.keySet().iterator().next().toLocalDate();
             if(isGeneralForecast) {
-                agendaDay.setGeneralWeatherForecastJson(forecastPeriodsByStartTimeJson);
-                return new AgendaDayDto(agendaDay, updatedPeriodsByStartTime, this.hourlyWeatherPeriods);
+                return new AgendaDayDto(dayDateOfPeriods, updatedPeriodsByStartTime, this.hourlyWeatherPeriods);
             }
-            agendaDay.setHourlyWeatherForecastJson(forecastPeriodsByStartTimeJson);
-            return new AgendaDayDto(agendaDay, this.generalWeatherPeriods, updatedPeriodsByStartTime);
+
+            return new AgendaDayDto(dayDateOfPeriods, this.generalWeatherPeriods, updatedPeriodsByStartTime);
         }
 
         // Replace any current periods with updated ones.
@@ -62,13 +59,6 @@ public record AgendaDayDto(
                     }
                 });
 
-        String forecastPeriodsByStartTimeJson = objectMapper.writeValueAsString(currentForecastPeriods);
-        if(isGeneralForecast) {
-            agendaDay.setGeneralWeatherForecastJson(forecastPeriodsByStartTimeJson);
-        } else {
-            agendaDay.setHourlyWeatherForecastJson(forecastPeriodsByStartTimeJson);
-        }
-
         return this;
     }
 
@@ -91,26 +81,10 @@ public record AgendaDayDto(
             }
 
             generalWeatherPeriods.putAll(updatedPeriods);
-            agendaDay.setGeneralWeatherForecastJson(objectMapper.writeValueAsString(generalWeatherPeriods));
 
             return true;
         }
 
         return false;
-    }
-
-    @JsonIgnore
-    public AgendaDayKey getAgendaDayKey() {
-        return agendaDay.getAgendaDayKey();
-    }
-
-    @JsonIgnore
-    public String getGeneralWeatherForecastJson() {
-        return agendaDay.getGeneralWeatherForecastJson();
-    }
-
-    @JsonIgnore
-    public String getHourlyWeatherForecastJson() {
-        return agendaDay.getHourlyWeatherForecastJson();
     }
 }

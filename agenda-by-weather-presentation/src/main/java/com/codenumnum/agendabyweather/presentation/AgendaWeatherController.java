@@ -4,13 +4,13 @@ import com.codenumnum.agendabyweather.dao.GeocodingApiDao;
 import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
 import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
 import com.codenumnum.agendabyweather.service.AgendaService;
-import com.codenumnum.agendabyweather.service.domain.AgendaDayDto;
 import com.codenumnum.agendabyweather.service.domain.AgendaDto;
 import com.codenumnum.agendabyweather.service.domain.AgendaItemCrudStatusEnum;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -26,15 +26,28 @@ public class AgendaWeatherController {
     GeocodingApiDao geocodingApiDao;
 
     @GetMapping
-    public AgendaDto getDefaultAgendaWeather() {
-        return agendaService.retrieveDefaultAgendaCreatingIfNotPresent(Optional.empty());
+    public ResponseEntity<AgendaDto> getDefaultAgendaWeather() {
+        Optional<AgendaDto> defaultAgendaOptional = agendaService.retrieveDefaultAgendaDto();
+        return defaultAgendaOptional
+                .map(agendaDto -> {
+                    // If a default agenda is found then update the weather on it, save the updates,
+                    // and return the updated agenda.
+                    AgendaDto updateAgendaDto = agendaService.updateGeneralAndHourlyForecastsForAgenda(agendaDto);
+                    agendaService.updateAgendaEntityFromDto(updateAgendaDto);
+                    return ResponseEntity.ok(updateAgendaDto);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{address}")
     public AgendaDto updateLatLonOnDefaultAgenda(@PathVariable String address) {
         String latLon = geocodingApiDao.retrieveLatLonFromAddress(address);
 
-        return agendaService.updateAgendaWeatherBaseInfo(latLon);
+        AgendaDto newAgendaDto = agendaService.retrieveNewAgendaDtoForLatLon(latLon, true);
+        newAgendaDto = agendaService.updateGeneralAndHourlyForecastsForAgenda(newAgendaDto);
+        agendaService.saveNewAgendaFromDto(newAgendaDto);
+
+        return newAgendaDto;
     }
 
     @PutMapping("/{latLon}/agenda-item")

@@ -1,20 +1,28 @@
 package com.codenumnum.agendabyweather.service.domain;
 
-import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
-import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaDay;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaItem;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Slf4j
-public record AgendaDto(@Delegate @JsonIgnore Agenda agenda, Map<LocalDate, AgendaDayDto> agendaDaysByDay) {
+public record AgendaDto(String latLon,
+                        boolean defaultAgenda,
+                        ZoneOffset offset,
+                        String hourlyWeatherForecastUrl,
+                        OffsetDateTime hourlyWeatherGeneratedAt,
+                        OffsetDateTime hourlyWeatherUpdateTime,
+                        String generalWeatherForecastUrl,
+                        OffsetDateTime generalWeatherGeneratedAt,
+                        OffsetDateTime generalWeatherUpdateTime,
+                        List<AgendaItem> agendaItems,
+                        Map<LocalDate, AgendaDayDto> agendaDaysByDay) {
 
     public void runArchivalProcess(LocalDate startDate, ObjectMapper objectMapper) {
         if(CollectionUtils.isEmpty(agendaDaysByDay)) {
@@ -34,10 +42,5 @@ public record AgendaDto(@Delegate @JsonIgnore Agenda agenda, Map<LocalDate, Agen
                 break;
             }
         }
-    }
-
-    @JsonIgnore
-    public Set<AgendaDay> getAgendaDays() {
-        return agenda.getAgendaDays();
     }
 }
