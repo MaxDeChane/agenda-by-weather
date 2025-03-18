@@ -36,9 +36,15 @@ public record AgendaDto(String latLon,
                         .map(Map.Entry::getKey)
                         .toList();
 
+        LocalDate currentDate = LocalDate.now(offset);
+
         for(int i = currentAndPastAgendaDateDays.size() - 1; i >= 0; i--) {
             AgendaDayDto currentDayDto = agendaDaysByDay.get(currentAndPastAgendaDateDays.get(i));
-            if(!currentDayDto.archiveGeneralWeatherPeriods(objectMapper)) {
+
+            // Break if there were no updates and the date is not today. This short-circuits the process, preventing unnecessary checks
+            // on entries that have already been updated. However, if the date is today and no updates have been made yet, continue checking,
+            // as updates may still occur later in the day.
+            if(!currentDayDto.archiveGeneralWeatherPeriods(objectMapper) && currentDate.isBefore(currentAndPastAgendaDateDays.get(i))) {
                 break;
             }
         }

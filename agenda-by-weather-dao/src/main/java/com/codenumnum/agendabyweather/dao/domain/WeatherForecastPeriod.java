@@ -13,7 +13,7 @@ public record WeatherForecastPeriod(int number, String name, OffsetDateTime star
     public WeatherForecastPeriod archiveGeneralWeatherPeriod() {
         LocalDate periodDateEndTimeDate = endTime.toLocalDate();
         OffsetDateTime currentDateTime = OffsetDateTime.now();
-        LocalDate today = LocalDate.now();
+        LocalDate today = currentDateTime.toLocalDate();
         LocalDate yesterday = today.minusDays(1);
 
         boolean isEarlierTodayOrLastNight = periodDateEndTimeDate.equals(today) && startTime.isBefore(currentDateTime) &&

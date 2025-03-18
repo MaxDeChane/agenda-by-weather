@@ -36,6 +36,7 @@ public class AgendaWeatherController {
                     agendaService.updateAgendaEntityFromDto(updateAgendaDto);
                     return ResponseEntity.ok(updateAgendaDto);
                 })
+                // Return 404 if the default agenda isn't found.
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
