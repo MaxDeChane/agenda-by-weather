@@ -1,7 +1,6 @@
 package com.codenumnum.agendabyweather.service.domain.factory;
 
 import com.codenumnum.agendabyweather.dao.domain.WeatherForecastPeriod;
-import com.codenumnum.agendabyweather.dao.domain.jpa.Agenda;
 import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaDay;
 import com.codenumnum.agendabyweather.dao.domain.jpa.AgendaDayKey;
 import com.codenumnum.agendabyweather.service.domain.AgendaDayDto;
