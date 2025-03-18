@@ -96,10 +96,12 @@ public class AgendaService {
         Map<LocalDate, Map<OffsetDateTime, WeatherForecastPeriod>> updatedWeatherPeriodsByDay = weatherService.mapWeatherPeriodsByDay(weatherForecastProperties.periods());
 
         LocalDate firstUpdatedDay = null;
+        ZoneOffset offset = ZoneOffset.UTC;
         for(Map.Entry<LocalDate, Map<OffsetDateTime, WeatherForecastPeriod>> entry : updatedWeatherPeriodsByDay.entrySet()) {
             // Get the first
             if(firstUpdatedDay == null || entry.getKey().isBefore(firstUpdatedDay)) {
                 firstUpdatedDay = entry.getKey();
+                offset = entry.getValue().values().iterator().next().startTime().getOffset();
             }
 
             AgendaDayDto agendaDayDto = agendaDto.agendaDaysByDay().get(entry.getKey());
@@ -113,12 +115,14 @@ public class AgendaService {
             agendaDto.agendaDaysByDay().put(entry.getKey(), agendaDayDto);
         }
 
+        agendaDto = agendaFactory.createDtoFromDtoWithGeneratedAndUpdatedWeatherTimestamps(agendaDto, generatedAt, updatedAt,
+                offset, isGeneralForecast);
+
         if(isGeneralForecast) {
             agendaDto.runArchivalProcess(firstUpdatedDay, objectMapper);
         }
 
-        return agendaFactory.createDtoFromDtoWithGeneratedAndUpdatedWeatherTimestamps(agendaDto, generatedAt, updatedAt,
-                weatherForecastProperties.generatedAt().getOffset(), isGeneralForecast);
+        return agendaDto;
     }
 
     public AgendaDto retrieveNewAgendaDtoForLatLon(String latLon, boolean isDefaultAgendaDto) {
