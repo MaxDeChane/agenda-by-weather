@@ -38,7 +38,7 @@ public record AgendaDayDto(
                     if (currentForecastPeriods.containsKey(updatedPeriodKey)) {
                         currentForecastPeriods.put(updatedPeriodKey, updatedPeriodsByStartTime.get(updatedPeriodKey));
                     } else {
-                        Optional<OffsetDateTime> keysOfPeriodsToUpdate =
+                        Optional<OffsetDateTime> keyOfPeriodsToUpdate =
                                 currentForecastPeriods.entrySet().stream()
                                         .filter(currentPeriodEntry -> {
                                             WeatherForecastPeriod currentPeriod = currentPeriodEntry.getValue();
@@ -48,13 +48,13 @@ public record AgendaDayDto(
                                             // Really only pertains to general forecast since they can spread multiple
                                             // hours.
                                             return (currentPeriod.startTime().isBefore(updatedPeriodKey) || currentPeriod.startTime().isEqual(updatedPeriodKey)) &&
-                                                    (currentPeriod.endTime().isAfter(updatedPeriodKey) || currentPeriod.endTime().isEqual(updatedPeriodKey));
+                                                    (currentPeriod.endTime().isAfter(updatedPeriodKey));
                                         })
                                         .map(Map.Entry::getKey)
                                         .findAny();
 
                         // Remove any conflicting periods since that overlap will
-                        keysOfPeriodsToUpdate.ifPresent(currentForecastPeriods::remove);
+                        keyOfPeriodsToUpdate.ifPresent(currentForecastPeriods::remove);
                         currentForecastPeriods.put(updatedPeriodKey, updatedPeriodsByStartTime.get(updatedPeriodKey));
                     }
                 });
