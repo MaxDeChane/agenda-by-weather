@@ -44,15 +44,31 @@ public class AgendaFactory {
 
     public AgendaDto createDtoFromDtoWithGeneratedAndUpdatedWeatherTimestamps(AgendaDto agendaDto, OffsetDateTime generatedAt,
                                                                               OffsetDateTime updatedAt, ZoneOffset offset, boolean isGeneralForecast) {
+
+        AgendaDto.AgendaDtoBuilder agendaDtoBuilder = AgendaDto.builder()
+                .latLon(agendaDto.latLon())
+                .defaultAgenda(agendaDto.defaultAgenda())
+                .offset(offset)
+                .hourlyWeatherForecastUrl(agendaDto.hourlyWeatherForecastUrl())
+                .generalWeatherForecastUrl(agendaDto.generalWeatherForecastUrl())
+                .agendaItems(agendaDto.agendaItems())
+                .agendaDaysByDay(agendaDto.agendaDaysByDay());
+
         if (isGeneralForecast) {
-            return new AgendaDto(agendaDto.latLon(), agendaDto.defaultAgenda(), offset, agendaDto.hourlyWeatherForecastUrl(),
-                    agendaDto.hourlyWeatherGeneratedAt(), agendaDto.hourlyWeatherUpdateTime(), agendaDto.generalWeatherForecastUrl(),
-                    generatedAt, updatedAt, agendaDto.agendaItems(), agendaDto.agendaDaysByDay());
+            agendaDtoBuilder
+                    .generalWeatherGeneratedAt(generatedAt)
+                    .generalWeatherUpdateTime(updatedAt)
+                    .hourlyWeatherGeneratedAt(agendaDto.hourlyWeatherGeneratedAt())
+                    .hourlyWeatherUpdateTime(agendaDto.hourlyWeatherUpdateTime());
+        } else {
+            agendaDtoBuilder
+                    .generalWeatherGeneratedAt(agendaDto.generalWeatherGeneratedAt())
+                    .generalWeatherUpdateTime(agendaDto.generalWeatherUpdateTime())
+                    .hourlyWeatherGeneratedAt(generatedAt)
+                    .hourlyWeatherUpdateTime(updatedAt);
         }
 
-        return new AgendaDto(agendaDto.latLon(), agendaDto.defaultAgenda(), offset, agendaDto.hourlyWeatherForecastUrl(),
-                generatedAt, updatedAt, agendaDto.generalWeatherForecastUrl(), agendaDto.generalWeatherGeneratedAt(), agendaDto.generalWeatherUpdateTime(),
-                agendaDto.agendaItems(), agendaDto.agendaDaysByDay());
+        return agendaDtoBuilder.build();
     }
 
     public Agenda createNewEntityFromDto(AgendaDto agendaDto) {
