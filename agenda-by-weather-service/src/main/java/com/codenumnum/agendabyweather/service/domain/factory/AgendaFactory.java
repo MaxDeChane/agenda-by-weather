@@ -35,7 +35,7 @@ public class AgendaFactory {
             }
         }
 
-        List<AgendaItem> sortedAgendaItems = agenda.getAgendaItems().stream().sorted().toList();
+        List<AgendaItem> sortedAgendaItems = agenda.getAgendaItems().stream().sorted(Comparator.comparing(AgendaItem::getStartDateTime)).toList();
 
         return new AgendaDto(agenda.getLatLon(), agenda.isDefaultAgenda(), null, agenda.getHourlyWeatherForecastUrl(),
                 agenda.getHourlyWeatherGeneratedAt(), agenda.getHourlyWeatherUpdateTime(), agenda.getGeneralWeatherForecastUrl(),
