@@ -1,6 +1,7 @@
 package com.codenumnum.agendabyweather.dao.domain.jpa;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,8 @@ public class AgendaItem {
     String name;
     OffsetDateTime startDateTime;
     OffsetDateTime endDateTime;
+    @Size(max = 250)
+    String description;
 
     /**
      * This is to take an updated unmanaged object from the request and
@@ -37,6 +40,7 @@ public class AgendaItem {
         this.name = updatedAgendaItem.getName();
         this.startDateTime = updatedAgendaItem.getStartDateTime();
         this.endDateTime = updatedAgendaItem.getEndDateTime();
+        this.description = updatedAgendaItem.getDescription();
     }
 
     @Override

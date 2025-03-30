@@ -28,6 +28,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.ninja_squad.dbsetup.Operations.*;
@@ -185,7 +186,8 @@ public class AgendaByWeatherAcceptanceTest {
         var newStartDateTime = OffsetDateTime.parse("2024-02-12T10:15:00+01:00");
         var newEndDateTime = OffsetDateTime.parse("2024-02-12T11:15:00+01:00");
 
-        var updateAgendaItem = AgendaItem.builder().name("newItem").startDateTime(newStartDateTime).endDateTime(newEndDateTime).build();
+        var updateAgendaItem = AgendaItem.builder().name("newItem").startDateTime(newStartDateTime).endDateTime(newEndDateTime)
+                .description("New Description").build();
 
         webTestClient.put().uri("/agenda-weather/test,-LatLon/agenda-item/testAgendaItem")
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
@@ -195,7 +197,8 @@ public class AgendaByWeatherAcceptanceTest {
                 .expectBody(AgendaItemCrudStatusEnum.class)
                 .isEqualTo(AgendaItemCrudStatusEnum.UPDATED);
 
-        String whereClause = String.format("ID = '%s' and NAME = 'newItem' and START_DATE_TIME = '%s' and  END_DATE_TIME = '%s'",
+        String whereClause = String.format("ID = '%s' and NAME = 'newItem' and START_DATE_TIME = '%s' and END_DATE_TIME = '%s'" +
+                        " and DESCRIPTION = 'New Description'",
                 AGENDA_ITEM_UUID, newStartDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME), newEndDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
         int agendaItemsRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_ITEM", whereClause);
         Assertions.assertEquals(1, agendaItemsRowCount);
@@ -217,6 +220,27 @@ public class AgendaByWeatherAcceptanceTest {
                 AGENDA_ITEM_UUID, START_DATE_TIME.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME), END_DATE_TIME.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
         int agendaItemsRowCount = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "AGENDA_ITEM", whereClause);
         Assertions.assertEquals(1, agendaItemsRowCount);
+    }
+
+    @Test
+    public void testUpdateAgendaItem_DescriptionOver250Characters_OnlyItemNameUpdated() {
+        var updateAgendaItem = AgendaItem.builder()
+                .name("newItem")
+                .startDateTime(START_DATE_TIME).endDateTime(END_DATE_TIME)
+                .description("This is for testing to check to make sure that under 250!!" +
+                        "This is for testing to check to make sure that under 250!!" +
+                        "This is for testing to check to make sure that under 250!!" +
+                        "This is for testing to check to make sure that under 250!!" +
+                        "This is for testing to check to make sure that under 250!!")
+                .build();
+
+        webTestClient.put().uri("/agenda-weather/test,-LatLon/agenda-item")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .bodyValue(updateAgendaItem)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(Map.class)
+                .value(actualResponse -> Assertions.assertEquals("size must be between 0 and 250", actualResponse.get("description")));
     }
 
     @Test
